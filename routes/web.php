@@ -16,3 +16,8 @@ Route::get('/login', function () {
 Route::get('/admin/dashboard', function () {
     return view('admin.dashboard');
 });
+
+// 4. Route Admin ABC
+Route::get('/admin/abc', function () {
+    return view('admin.abc');
+});
