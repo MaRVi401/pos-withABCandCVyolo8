@@ -27,7 +27,6 @@ class PosSystemSeeder extends Seeder
             'is_active' => true,
             'created_at' => now(),
         ], [
-            'user_id' => 2,
             'role_id' => 2,
             'name' => 'Yss Customer',
             'email' => 'customer@pos.com',
@@ -53,7 +52,7 @@ class PosSystemSeeder extends Seeder
             ['category_id' => 3, 'category_name' => 'Merchandise', 'description' => 'Peralatan dan souvenir toko'],
         ]);
 
-        // 5. Seed Products (Fast-moving & Slow-moving)
+        // 5. Seed Products
         DB::table('products')->insert([
             [
                 'product_id' => 1,
