@@ -6,14 +6,18 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ABCController;
 
 Route::prefix('v1')->group(function () {
-    // Guest Routes
+    // 1. Guest Routes (Tanpa Auth)
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);
     
-    // Authenticated Routes (Butuh Bearer Token Sanctum)
-    Route::middleware('auth:sanctum', 'admin')->group(function () {
+    // 2. Authenticated Routes - Semua Role yang Login (Admin & Customer)
+    Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
-        Route::get('/products', [ProductController::class, 'index']);
-        Route::get('/abc/generate-bundle', [ABCController::class, 'generateBundle']);
+        
+        // 3. Khusus Hak Akses Admin Saja
+        Route::middleware('admin')->group(function () {
+            Route::get('/products', [ProductController::class, 'index']);
+            Route::get('/abc/generate-bundle', [ABCController::class, 'generateBundle']);
+        });
     });
 });

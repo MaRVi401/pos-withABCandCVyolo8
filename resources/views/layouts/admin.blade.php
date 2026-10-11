@@ -181,7 +181,7 @@
             return response;
         };
 
-        // 3. Fungsi bawaan kamu
+        // 3. Alpine.js Component untuk Layout Admin
         function adminLayout() {
             return {
                 chatOpen: false,
