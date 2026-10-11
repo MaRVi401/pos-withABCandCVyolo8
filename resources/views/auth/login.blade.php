@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - POS System Admin</title>
+    <link rel="icon" type="image/x-icon"
+        href="https://i.pinimg.com/736x/90/0c/9e/900c9e431963432cb0f5fbe7c5f5af91.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        [x-cloak] { display: none !important; }
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </head>
+
 <body class="bg-slate-900 flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8" x-data="loginApp()">
@@ -21,24 +27,26 @@
         </div>
 
         <!-- Alert Error Login -->
-        <div x-show="errorMessage" x-cloak class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg" x-text="errorMessage"></div>
+        <div x-show="errorMessage" x-cloak
+            class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg" x-text="errorMessage">
+        </div>
 
         <!-- Form Login -->
         <form @submit.prevent="submitLogin()" class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Admin</label>
-                <input type="email" x-model="email" placeholder="admin@pos.com" required 
-                       class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="email" x-model="email" placeholder="admin@pos.com" required
+                    class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
-                <input type="password" x-model="password" placeholder="••••••••" required 
-                       class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" x-model="password" placeholder="••••••••" required
+                    class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
 
-            <button type="submit" :disabled="loading" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg shadow transition-all flex items-center justify-center gap-2">
+            <button type="submit" :disabled="loading"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg shadow transition-all flex items-center justify-center gap-2">
                 <span x-show="!loading">Masuk ke System</span>
                 <span x-show="loading">Memproses...</span>
             </button>
@@ -105,4 +113,5 @@
         }
     </script>
 </body>
+
 </html>
