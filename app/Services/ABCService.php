@@ -16,9 +16,11 @@ class ABCService
      */
     public function optimizeBundling(): array
     {
-        // 1. Ambil Produk Fast-moving (stok >= 30) & Slow-moving (stok < 30) dari database
-        $fastProducts = Product::where('stock_quantity', '>=', 30)->get();
-        $slowProducts = Product::where('stock_quantity', '<', 30)->get();
+        // 1. Ambil kolom penting saja untuk efisiensi memori (Fast-moving vs Slow-moving)
+        $columns = ['product_id', 'product_name', 'buy_price', 'sell_price', 'stock_quantity'];
+
+        $fastProducts = Product::select($columns)->where('stock_quantity', '>=', 30)->get();
+        $slowProducts = Product::select($columns)->where('stock_quantity', '<', 30)->get();
 
         if ($fastProducts->isEmpty() || $slowProducts->isEmpty()) {
             return [
@@ -30,7 +32,7 @@ class ABCService
         $bestBundle = null;
         $maxFitnessScore = -INF;
 
-        // 2. Simulasi Perulangan Lebah Pekerja (Employed Bees) & Lebah Pengamat (Onlooker Bees)
+        // 2. Simulasi Perulangan Lebah Pekerja (Employed) & Pengamat (Onlooker)
         for ($iter = 0; $iter < $this->maxIter; $iter++) {
             foreach ($fastProducts as $fast) {
                 foreach ($slowProducts as $slow) {
@@ -53,15 +55,12 @@ class ABCService
                     }
 
                     // d. MULTI-CRITERIA FITNESS FUNCTION:
-                    //    1. Profit Factor: Semakin besar profit, nilai fitnes naik.
-                    //    2. Urgency Factor: Semakin sedikit stok slow-moving, semakin mendesak untuk didorong via bundling.
-                    //    3. Discount Synergy: Memberikan insentif skor jika diskon berada pada tingkat yang cukup menarik pembeli (> 7%).
                     $urgencyScore = (100 - $slow->stock_quantity) * 150;
                     $attractivenessBonus = ($discountRate >= 0.08) ? 2000 : 0;
 
                     $fitness = $profit + $urgencyScore + $attractivenessBonus;
 
-                    // e. Seleksi Solusi Terbaik (Penyimpanan Nektar Terbaik Lebah)
+                    // e. Seleksi Solusi Terbaik
                     if ($fitness > $maxFitnessScore) {
                         $maxFitnessScore = $fitness;
                         $bestBundle = [
