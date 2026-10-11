@@ -12,9 +12,7 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
-// 3. Route Admin Dashboard (Dilindungi middleware auth)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/admin/dashboard', function () {
-        return view('layouts.admin');
-    });
+// 3. Route Admin Dashboard
+Route::get('/admin/dashboard', function () {
+    return view('admin.dashboard');
 });

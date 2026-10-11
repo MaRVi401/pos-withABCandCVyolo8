@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - POS System Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body class="bg-slate-900 flex items-center justify-center min-h-screen p-4">
 
@@ -42,8 +46,13 @@
 
         <!-- Akun Testing Seeder -->
         <div class="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
-            <p class="font-bold text-slate-800 mb-1">Akun Testing (dari Seeder):</p>
+            <p class="font-bold text-slate-800 mb-1">Akun Testing Admin:</p>
             <p><strong>Email:</strong> admin@pos.com</p>
+            <p><strong>Password:</strong> 12345678</p>
+        </div>
+        <div class="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+            <p class="font-bold text-slate-800 mb-1">Akun Testing Customer:</p>
+            <p><strong>Email:</strong> customer@pos.com</p>
             <p><strong>Password:</strong> 12345678</p>
         </div>
     </div>
@@ -59,13 +68,15 @@
                     this.loading = true;
                     this.errorMessage = '';
 
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
                     try {
-                        // Memanggil API Auth Login yang sudah kita buat
                         const response = await fetch('/api/v1/auth/login', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Accept': 'application/json'
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken || ''
                             },
                             body: JSON.stringify({
                                 email: this.email,
@@ -75,12 +86,10 @@
 
                         const result = await response.json();
 
-                        if (result.success) {
-                            // Simpan token Sanctum & nama user di LocalStorage Browser
+                        if (response.ok && result.success) {
                             localStorage.setItem('auth_token', result.data.access_token);
                             localStorage.setItem('user_info', JSON.stringify(result.data.user));
 
-                            // Redirect langsung ke Dashboard Admin
                             window.location.href = '/admin/dashboard';
                         } else {
                             this.errorMessage = result.message || 'Login gagal. Periksa kembali email & password.';
