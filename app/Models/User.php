@@ -2,31 +2,46 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
+
+    protected $table = 'users';
+    protected $primaryKey = 'user_id';
+    public $timestamps = false;
+
+    protected $fillable = [
+        'role_id',
+        'name',
+        'email',
+        'password_hash',
+        'phone',
+        'address',
+        'is_active',
+        'created_at',
+    ];
+
+    protected $hidden = [
+        'password_hash',
+    ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Memberitahu Laravel bahwa kolom password menggunakan 'password_hash'
      */
-    protected function casts(): array
+    public function getAuthPassword()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->password_hash;
+    }
+
+    /**
+     * DEFINISI RELASI KE MODEL ROLE (Ini yang menyebabkan error)
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 }
