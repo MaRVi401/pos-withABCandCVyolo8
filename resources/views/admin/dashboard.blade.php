@@ -346,7 +346,7 @@
                     },
 
                     startYoloPolling() {
-                        const FLASK_BASE_URL = "{{ config('app.flask_url', env('FLASK_YOLO_URL', 'http://localhost:5000')) }}";
+                        const FLASK_BASE_URL = "{{ env('FLASK_YOLO_URL', 'http://localhost:5000') }}";
 
                         const streamImg = document.getElementById('yolo-stream-img');
                         if (streamImg && streamImg.src !== `${FLASK_BASE_URL}/video_feed`) {
