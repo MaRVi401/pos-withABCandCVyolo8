@@ -67,6 +67,60 @@
         </button>
     </div>
 
+    <!-- Live CCTV Visitor Counter (YOLOv8 & Flask Integration) -->
+    <div class="bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 overflow-hidden">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">📹</span>
+                <div>
+                    <h3 class="font-bold text-sm text-cyan-400">Live CCTV Visitor Counter (YOLOv8)</h3>
+                    <p class="text-xs text-slate-400">Deteksi & Tracking Pengunjung Real-time via Python Flask Stream</p>
+                </div>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE
+            </span>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                <!-- Stream Video Feed dari Flask Service -->
+                <div class="lg:col-span-2">
+                    <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 min-h-[300px] flex items-center justify-center shadow-inner">
+                        <img src="http://localhost:5000/video_feed" 
+                             alt="CCTV Stream Feed" 
+                             class="w-full h-auto object-cover rounded-xl"
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/640x360/0f172a/94a3b8?text=CCTV+Offline+/+Server+Flask+Belum+Jalan';" />
+                    </div>
+                </div>
+
+                <!-- Card Stats Total Pengunjung Real-time -->
+                <div class="space-y-4">
+                    <div class="p-5 text-center bg-gradient-to-br from-cyan-600 to-blue-700 rounded-xl shadow-lg border border-cyan-500/30">
+                        <p class="text-xs font-extrabold uppercase tracking-wider text-cyan-100">Pengunjung Terdeteksi</p>
+                        <h1 class="text-5xl font-extrabold text-white mt-2" id="yolo-visitor-count">0</h1>
+                        <p class="text-[11px] text-cyan-200 mt-1">Orang Dalam Area CCTV</p>
+                    </div>
+
+                    <div class="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-300">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+                            <span class="text-slate-400">Status Flask:</span>
+                            <span class="font-bold text-emerald-400">Connected (Port 5000)</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+                            <span class="text-slate-400">Model AI:</span>
+                            <span class="font-semibold text-slate-200">YOLOv8 Nano (pt)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400">Target Class:</span>
+                            <span class="font-semibold text-slate-200">Person (Class ID 0)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Data Table Produk dari REST API -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50">
@@ -198,6 +252,7 @@
                     this.userInfo = JSON.parse(user);
                 }
                 this.fetchProducts();
+                this.startYoloPolling();
             },
 
             async fetchProducts() {
@@ -247,6 +302,28 @@
                 } finally {
                     this.abcLoading = false;
                 }
+            },
+
+            // Fungsi Polling Realtime ke Server Flask YOLO
+            startYoloPolling() {
+                const fetchYoloStats = async () => {
+                    try {
+                        const response = await fetch('http://localhost:5000/api/stats');
+                        if (response.ok) {
+                            const data = await response.json();
+                            const counterElem = document.getElementById('yolo-visitor-count');
+                            if (counterElem) {
+                                counterElem.innerText = data.total_detected;
+                            }
+                        }
+                    } catch (error) {
+                        // Silently handle error jika service Flask belum/tidak jalan
+                    }
+                };
+
+                // Panggil pertama kali dan set interval per 1 detik
+                fetchYoloStats();
+                setInterval(fetchYoloStats, 1000);
             }
         }
     }
