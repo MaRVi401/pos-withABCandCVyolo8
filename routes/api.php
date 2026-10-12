@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\TransactionController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\StockAdjustmentController;
+use App\Http\Controllers\Api\V1\CustomerController;
 
 Route::prefix('v1')->group(function () {
     // 1. Guest Routes (Tanpa Auth)
@@ -33,6 +34,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index']);
         Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);
+
+        Route::apiResource('customers', CustomerController::class);
+        Route::patch('/customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
 
         Route::get('/reports/sales', [ReportController::class, 'index']);
         Route::get('/reports/sales/export-pdf', [ReportController::class, 'exportPdf']);

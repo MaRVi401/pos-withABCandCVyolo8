@@ -73,6 +73,13 @@
                         <span>Smart Bundling (ABC)</span>
                         <span class="bg-indigo-500 text-xs px-2 py-0.5 rounded-full text-white font-bold">AI</span>
                     </a>
+                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        Manajemen Pengguna
+                    </div>
+                    <a href="{{ url('/admin/customers') }}"
+                        class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/customers*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
+                        <span>Data Pelanggan</span>
+                    </a>
                 </nav>
             </div>
 

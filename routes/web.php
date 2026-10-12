@@ -43,3 +43,7 @@ Route::get('/admin/products', function () {
 Route::get('/admin/stock-adjustments', function () {
     return view('admin.stock_adjustments');
 });
+
+Route::get('/admin/customers', function () {
+    return view('admin.customers');
+});
