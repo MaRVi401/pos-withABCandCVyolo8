@@ -35,47 +35,62 @@
 
                 <!-- Navigation Menu Sidebar -->
                 <nav class="mt-6 px-4 space-y-1">
+                    <!-- Dashboard -->
                     <a href="{{ url('/admin/dashboard') }}"
-                        class="flex items-center px-4 py-3 text-sm font-medium bg-indigo-600 rounded-lg text-white shadow-sm">
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/dashboard*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Dashboard</span>
                     </a>
 
                     <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Katalog & Stok
                     </div>
+
+                    <!-- Kategori Produk -->
                     <a href="{{ url('/admin/categories') }}"
-                        class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/categories*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Kategori Produk</span>
                     </a>
+
+                    <!-- Data Produk -->
                     <a href="{{ url('/admin/products') }}"
-                        class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/products*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Data Produk</span>
                     </a>
+
+                    <!-- Penyesuaian Stok -->
                     <a href="{{ url('/admin/stock-adjustments') }}"
-                        class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/stock-adjustments*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Penyesuaian Stok</span>
                     </a>
 
                     <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaksi & POS
                     </div>
+
+                    <!-- Kasir (POS) -->
                     <a href="{{ url('/admin/pos') }}"
-                        class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/pos*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Kasir (POS)</span>
                     </a>
+
+                    <!-- Laporan Penjualan -->
                     <a href="{{ url('/admin/reports') }}"
-                        class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/reports*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Laporan Penjualan</span>
                     </a>
 
                     <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Smart Optimasi
                     </div>
-                    <a href="{{ url('admin/abc') }}"
-                        class="flex items-center justify-between px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
+
+                    <!-- Smart Bundling (ABC) -->
+                    <a href="{{ url('/admin/abc') }}"
+                        class="flex items-center justify-between px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/abc*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Smart Bundling (ABC)</span>
                         <span class="bg-indigo-500 text-xs px-2 py-0.5 rounded-full text-white font-bold">AI</span>
                     </a>
-                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Manajemen Pengguna
-                    </div>
+
+                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Manajemen
+                        Pengguna</div>
+
+                    <!-- Data Pelanggan -->
                     <a href="{{ url('/admin/customers') }}"
                         class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/customers*') ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800' }}">
                         <span>Data Pelanggan</span>
@@ -219,8 +234,8 @@
                         localStorage.removeItem('auth_token');
                         localStorage.removeItem('user_info');
 
-                        // Redirect kembali ke Halaman Login
-                        window.location.href = '/login';
+                        // Redirect kembali ke Halaman Utama
+                        window.location.href = '/';
                     }
                 }
             }

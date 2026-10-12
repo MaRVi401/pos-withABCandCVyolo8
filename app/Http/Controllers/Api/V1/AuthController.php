@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /**
-     * API Login (Admin/Kasir & Customer)
+     * API Login Utama (Admin & Kasir)
+     * Hanya mengizinkan role_id = 1 (Admin/Kasir) untuk login
      */
     public function login(Request $request)
     {
@@ -28,7 +29,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Cari user berdasarkan email
+        // Cari user berdasarkan email beserta relasi role
         $user = User::with('role')->where('email', $request->email)->first();
 
         // Cek keberadaan user dan kecocokan password_hash
@@ -47,6 +48,14 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // BLOKIR CUSTOMER: Jika role_id = 2 (Customer), tolak login di portal admin
+        if ((int)$user->role_id !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak! Akun Customer tidak diizinkan masuk ke Web Admin.'
+            ], 403);
+        }
+
         // Buat Sanctum Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -58,7 +67,8 @@ class AuthController extends Controller
                 'token_type'   => 'Bearer',
                 'user'         => [
                     'user_id'   => $user->user_id,
-                    'role_name' => $user->role->role_name ?? null,
+                    'role_id'   => $user->role_id, // Disertakan agar frontend bisa cek role
+                    'role_name' => $user->role->role_name ?? 'Admin',
                     'name'      => $user->name,
                     'email'     => $user->email,
                     'phone'     => $user->phone,
@@ -114,6 +124,7 @@ class AuthController extends Controller
                 'token_type'   => 'Bearer',
                 'user'         => [
                     'user_id'   => $user->user_id,
+                    'role_id'   => $user->role_id,
                     'role_name' => $user->role->role_name ?? 'Customer',
                     'name'      => $user->name,
                     'email'     => $user->email,

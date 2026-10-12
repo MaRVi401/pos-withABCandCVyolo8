@@ -28,7 +28,9 @@
 
         <!-- Alert Error Login -->
         <div x-show="errorMessage" x-cloak
-            class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg" x-text="errorMessage">
+            class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+            <span>⚠️</span>
+            <span x-text="errorMessage"></span>
         </div>
 
         <!-- Form Login -->
@@ -36,32 +38,43 @@
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Admin</label>
                 <input type="email" x-model="email" placeholder="admin@pos.com" required
-                    class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    class="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
                 <input type="password" x-model="password" placeholder="••••••••" required
-                    class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    class="w-full text-sm border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
             </div>
 
             <button type="submit" :disabled="loading"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg shadow transition-all flex items-center justify-center gap-2">
+                class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm py-2.5 rounded-xl shadow transition-all flex items-center justify-center gap-2">
                 <span x-show="!loading">Masuk ke System</span>
-                <span x-show="loading">Memproses...</span>
+                <span x-show="loading" x-cloak class="flex items-center gap-2">
+                    <span class="animate-spin">🌀</span> Memproses...
+                </span>
             </button>
         </form>
 
-        <!-- Akun Testing Seeder -->
-        <div class="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
-            <p class="font-bold text-slate-800 mb-1">Akun Testing Admin:</p>
-            <p><strong>Email:</strong> admin@pos.com</p>
-            <p><strong>Password:</strong> 12345678</p>
-        </div>
-        <div class="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
-            <p class="font-bold text-slate-800 mb-1">Akun Testing Customer:</p>
-            <p><strong>Email:</strong> customer@pos.com</p>
-            <p><strong>Password:</strong> 12345678</p>
+        <!-- Informasi Akun Testing -->
+        <div class="mt-6 space-y-2">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                <p class="font-bold text-slate-800 mb-1 flex items-center justify-between">
+                    <span>Akun Testing Admin:</span>
+                    <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full uppercase">Bisa Login</span>
+                </p>
+                <p><strong>Email:</strong> admin@pos.com</p>
+                <p><strong>Password:</strong> 12345678</p>
+            </div>
+            
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                <p class="font-bold text-slate-800 mb-1 flex items-center justify-between">
+                    <span>Akun Testing Customer:</span>
+                    <span class="bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-full uppercase">Akses Ditolak</span>
+                </p>
+                <p><strong>Email:</strong> customer@pos.com</p>
+                <p><strong>Password:</strong> 12345678</p>
+            </div>
         </div>
     </div>
 
@@ -95,8 +108,22 @@
                         const result = await response.json();
 
                         if (response.ok && result.success) {
+                            const user = result.data.user;
+
+                            // GUARD DIBATASI: Cek apakah role_id BUKAN 1 (Bukan Admin)
+                            const isUserAdmin = (user.role_id && parseInt(user.role_id) === 1) || 
+                                              (user.role_name && user.role_name.toLowerCase() === 'admin');
+
+                            if (!isUserAdmin) {
+                                this.errorMessage = 'Akses ditolak! Akun Anda adalah Customer dan tidak diizinkan masuk ke Web Admin.';
+                                localStorage.removeItem('auth_token');
+                                localStorage.removeItem('user_info');
+                                return;
+                            }
+
+                            // Jika terkonfirmasi Admin, simpan ke LocalStorage dan redirect
                             localStorage.setItem('auth_token', result.data.access_token);
-                            localStorage.setItem('user_info', JSON.stringify(result.data.user));
+                            localStorage.setItem('user_info', JSON.stringify(user));
 
                             window.location.href = '/admin/dashboard';
                         } else {
