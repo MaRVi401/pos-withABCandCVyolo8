@@ -13,6 +13,10 @@ class Transaction extends Model
     protected $primaryKey = 'transaction_id';
     public $timestamps = false;
 
+    protected $casts = [
+        'transaction_date' => 'datetime',
+    ];
+
     protected $fillable = [
         'invoice_number',
         'admin_id',

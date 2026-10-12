@@ -57,7 +57,7 @@
 
                     <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaksi & POS
                     </div>
-                    <a href="#"
+                    <a href="{{ url('/admin/pos') }}"
                         class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
                         <span>Kasir (POS)</span>
                     </a>

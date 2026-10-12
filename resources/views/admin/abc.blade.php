@@ -136,7 +136,7 @@
                 <div>
                     <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4">Analisis Fitnes Diskon</h3>
 
-                    <div class="text-center p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100">
+                    <div class="text-center p-6 bg-linear-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100">
                         <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider">Estimasi Margin Keuntungan</p>
                         <h2 class="text-3xl font-extrabold text-indigo-900 mt-2"
                             x-text="'Rp ' + Number(bundle?.estimated_profit || 0).toLocaleString('id-ID')"></h2>
