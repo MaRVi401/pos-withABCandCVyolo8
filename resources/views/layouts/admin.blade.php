@@ -61,7 +61,7 @@
                         class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
                         <span>Kasir (POS)</span>
                     </a>
-                    <a href="#"
+                    <a href="{{ url('/admin/reports') }}"
                         class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
                         <span>Laporan Penjualan</span>
                     </a>

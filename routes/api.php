@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ABCController;
 use App\Http\Controllers\Api\V1\TransactionController;
+use App\Http\Controllers\Api\V1\ReportController;
 
 Route::prefix('v1')->group(function () {
     // 1. Guest Routes (Tanpa Auth)
@@ -19,9 +20,14 @@ Route::prefix('v1')->group(function () {
         Route::middleware('admin')->group(function () {
             Route::get('/products', [ProductController::class, 'index']);
             Route::get('/abc/generate-bundle', [ABCController::class, 'generateBundle']);
+            Route::get('/reports/sales', [ReportController::class, 'index']);
         });
 
         Route::post('/transactions', [TransactionController::class, 'store']);
         Route::get('/transactions', [TransactionController::class, 'index']);
+
+        Route::get('/reports/sales', [ReportController::class, 'index']);
+        Route::get('/reports/sales/export-pdf', [ReportController::class, 'exportPdf']);
+        Route::get('/reports/sales/export-excel', [ReportController::class, 'exportExcel']);
     });
 });

@@ -22,6 +22,12 @@ Route::get('/admin/abc', function () {
     return view('admin.abc');
 });
 
+// 5. Route Admin Products
 Route::get('/admin/pos', function () {
     return view('admin.pos');
+});
+
+// 6. Route Admin Reports
+Route::get('/admin/reports', function () {
+    return view('admin.reports');
 });
