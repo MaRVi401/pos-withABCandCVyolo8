@@ -53,6 +53,7 @@ def generate_frames():
 
         # Update data global statistik
         stats_data["total_detected"] = current_count
+        print(f"[DEBUG] Jumlah Orang Terdeteksi: {current_count}")
 
         # Encode Frame ke JPEG Format
         ret, buffer = cv2.imencode('.jpg', frame)

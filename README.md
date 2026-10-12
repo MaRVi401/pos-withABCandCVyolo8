@@ -1,58 +1,192 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Integrated POS System with ABC Analysis & YOLOv8 Computer Vision
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Point of Sale (POS) modern berbasis **Laravel 13** yang diintegrasikan dengan modul **Analisis Inventaris ABC** serta layanan **Computer Vision (YOLOv8)** berbasis Python untuk deteksi produk secara visual dan otomatis.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Point of Sale (POS)**: Antarmuka kasir interaktif untuk pemrosesan transaksi penjualan cepat.
+- **Computer Vision Service (YOLOv8)**: Layanan terpisah berbasis Python (`yolo-service`) untuk pengenalan/penghitungan barang secara otomatis via input video/kamera.
+- **Analisis Inventaris ABC (ABC Analysis)**: Pengelompokan produk otomatis ke dalam kategori **A** (Nilai tinggi), **B** (Nilai sedang), dan **C** (Nilai rendah) guna mendukung pengambilan keputusan manajemen stok.
+- **Manajemen Stok & Penyesuaian**: Pelacakan stok masuk/keluar serta fitur *Stock Adjustment*.
+- **Pelaporan & Ekspor**: Generasi laporan transaksi dan stok dengan *template* cetak PDF.
+- **RESTful API V1**: API yang diamankan menggunakan **Laravel Sanctum** untuk integrasi aplikasi *mobile* atau layanan pihak ketiga.
+- **Role-Based Access Control (RBAC)**: Pembatasan hak akses pengguna (Admin, Kasir, dll).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🛠️ Arsitektur & Teknologi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Backend / Web App**: Laravel 13 (PHP 8.2+)
+- **Database**: MySQL
+- **Authentication**: Laravel Sanctum
+- **Computer Vision**: Python 3.x, Ultralytics YOLOv8, OpenCV
+- **Frontend Views**: Blade Templates, CSS/JS (Vite)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## 📁 Struktur Direktori
 
-## Agentic Development
+```text
+.
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/Api/V1/   # API V1 (Auth, Product, Transaction, ABC, dll)
+│   │   └── Middleware/           # Middleware hak akses (CheckAdminRole)
+│   ├── Models/                   # Model Eloquent (Product, Transaction, Category, dll)
+│   └── Services/                 # Business Logic (ABCService)
+├── config/                       # Konfigurasi aplikasi Laravel
+├── database/
+│   ├── migrations/               # Skema tabel POS & Token Akses
+│   └── seeders/                  # Seeder data master, produk, dan pengguna
+├── resources/
+│   └── views/
+│       ├── admin/                # Antarmuka Admin & Kasir (POS, ABC, Reports)
+│       └── reports/              # Template PDF Laporan
+├── routes/
+│   ├── api.php                   # Endpoints API V1
+│   └── web.php                   # Rute Antarmuka Web
+├── yolo-service/                 # Microservice Computer Vision (YOLOv8 Python)
+│   └── app.py                    # Server Flask/FastAPI untuk deteksi YOLOv8
+└── vite.config.js                # Build tool frontend
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## ⚙️ Panduan Instalasi & Konfigurasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 1. Prasyarat Sistem
 
-## Code of Conduct
+* PHP >= 8.2
+* Composer
+* Node.js & NPM
+* Python 3.9+ (Untuk `yolo-service`)
+* Database Server (MySQL)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+### 2. Instalasi Aplikasi Utama (Laravel POS)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. **Clone Repositori**:
+```bash
+git clone https://github.com/username/pos-withABCandCVyolo8.git
+cd pos-withABCandCVyolo8
 
-## License
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+2. **Instal Dependensi PHP & Node.js**:
+```bash
+composer install
+npm install
+
+```
+
+
+3. **Konfigurasi Environment**:
+Salin berkas `.env.example` menjadi `.env` dan atur konfigurasi database Anda:
+```bash
+cp .env.example .env
+php artisan key:generate
+
+```
+
+
+4. **Migrasi & Seeding Database**:
+```bash
+php artisan migrate --seed
+
+```
+
+
+5. **Build Asset Frontend**:
+```bash
+npm run build
+# Atau gunakan `npm run dev` untuk lingkungan pengembangan
+
+```
+
+
+6. **Jalankan Server Laravel**:
+```bash
+php artisan serve
+
+```
+7. **Link Storage**:
+```bash
+php artisan storage:link
+
+```
+
+Aplikasi web akan berjalan pada `http://127.0.0.1:8000`.
+
+---
+
+### 3. Setup Layanan Computer Vision (`yolo-service`)
+
+1. **Masuk ke direktori YOLO Service**:
+```bash
+cd yolo-service
+
+```
+
+
+2. **Buat Virtual Environment Python**:
+```bash
+python -m venv venv
+# Linux/macOS
+source venv/bin/activate
+# Windows
+venv\Scripts\activate
+
+```
+
+
+3. **Instal Dependensi Python**:
+```bash
+pip install ultralytics opencv-python flask requests
+
+```
+
+
+4. **Jalankan Service YOLO**:
+```bash
+python app.py
+
+```
+
+
+
+---
+
+## 📡 Integrasi API V1
+
+Sistem menyediakan antarmuka REST API V1 yang terproteksi token Sanctum pada endpoint `/api/v1/`:
+
+| Method | Endpoint | Deskripsi |
+| --- | --- | --- |
+| `POST` | `/api/v1/login` | Authentikasi & Pengambilan Token |
+| `GET` | `/api/v1/products` | Mengambil daftar produk |
+| `POST` | `/api/v1/transactions` | Membuat transaksi baru |
+| `GET` | `/api/v1/abc-analysis` | Mengambil hasil kalkulasi Analisis ABC |
+| `POST` | `/api/v1/stock-adjustments` | Melakukan penyesuaian stok |
+
+---
+
+## 📊 Analisis ABC (Activity-Based Classification)
+
+Sistem secara otomatis menghitung efisiensi pengelolaan stok berdasarkan hukum Pareto (80/20):
+
+* **Kategori A**: Produk kontributor penjualan tertinggi (~80% nilai penjualan, ~20% total item).
+* **Kategori B**: Produk kontributor penjualan menengah (~15% nilai penjualan, ~30% total item).
+* **Kategori C**: Produk kontributor penjualan rendah (~5% nilai penjualan, ~50% total item).
+
+Laporan analisis dapat diakses pada panel Admin melalui menu **ABC Analysis**.
+
+---
+
+## 📄 Lisensi
+
+Pake aja lah bebas :v
