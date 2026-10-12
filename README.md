@@ -7,7 +7,7 @@ Sistem Point of Sale (POS) modern berbasis **Laravel 13** yang diintegrasikan de
 ## 🚀 Fitur Utama
 
 - **Point of Sale (POS)**: Antarmuka kasir interaktif untuk pemrosesan transaksi penjualan cepat.
-- **Computer Vision Service (YOLOv8)**: Layanan terpisah berbasis Python (`yolo-service`) untuk pengenalan/penghitungan barang secara otomatis via input video/kamera.
+- **Computer Vision Service (YOLOv8)**: Layanan terpisah berbasis Python (`yolo-service`) untuk perhitungan pengunjung yang datang ke toko.
 - **Analisis Inventaris ABC (ABC Analysis)**: Pengelompokan produk otomatis ke dalam kategori **A** (Nilai tinggi), **B** (Nilai sedang), dan **C** (Nilai rendah) guna mendukung pengambilan keputusan manajemen stok.
 - **Manajemen Stok & Penyesuaian**: Pelacakan stok masuk/keluar serta fitur *Stock Adjustment*.
 - **Pelaporan & Ekspor**: Generasi laporan transaksi dan stok dengan *template* cetak PDF.
@@ -18,7 +18,7 @@ Sistem Point of Sale (POS) modern berbasis **Laravel 13** yang diintegrasikan de
 
 ## 🛠️ Arsitektur & Teknologi
 
-- **Backend / Web App**: Laravel 13 (PHP 8.2+)
+- **Backend / Web App**: Laravel 13 (PHP 8.3+)
 - **Database**: MySQL
 - **Authentication**: Laravel Sanctum
 - **Computer Vision**: Python 3.x, Ultralytics YOLOv8, OpenCV
