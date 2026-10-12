@@ -31,3 +31,15 @@ Route::get('/admin/pos', function () {
 Route::get('/admin/reports', function () {
     return view('admin.reports');
 });
+
+Route::get('/admin/categories', function () {
+    return view('admin.categories');
+});
+
+Route::get('/admin/products', function () {
+    return view('admin.products');
+});
+
+Route::get('/admin/stock-adjustments', function () {
+    return view('admin.stock_adjustments');
+});

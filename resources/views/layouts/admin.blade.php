@@ -42,15 +42,15 @@
 
                     <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Katalog & Stok
                     </div>
-                    <a href="#"
+                    <a href="{{ url('/admin/categories') }}"
                         class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
                         <span>Kategori Produk</span>
                     </a>
-                    <a href="#"
+                    <a href="{{ url('/admin/products') }}"
                         class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
                         <span>Data Produk</span>
                     </a>
-                    <a href="#"
+                    <a href="{{ url('/admin/stock-adjustments') }}"
                         class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
                         <span>Penyesuaian Stok</span>
                     </a>
