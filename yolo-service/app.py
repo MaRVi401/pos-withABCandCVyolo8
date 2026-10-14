@@ -1,8 +1,9 @@
-from flask import Flask, Response, jsonify
-from flask_cors import CORS
 import cv2
 import numpy as np
+from flask import Flask, Response, jsonify, request
+from flask_cors import CORS
 from ultralytics import YOLO
+from cap_from_youtube import cap_from_youtube
 
 app = Flask(__name__)
 # Enable CORS untuk semua route agar frontend (Laravel/React/Flutter) bisa akses API
@@ -12,11 +13,13 @@ CORS(app)
 model = YOLO('yolov8n.pt')
 
 # --- PARAMETER KALIBRASI TINGGI BADAN ---
-# Ganti nilai ini sesuai hasil kalibrasi area CCTV
-# Contoh: Tinggi acuan 170 cm terdeteksi setinggi 340 piksel pada jarak standar
 KNOWN_HEIGHT_CM = 170.0
 REFERENCE_PIXEL_HEIGHT = 340.0
 CM_PER_PIXEL = KNOWN_HEIGHT_CM / REFERENCE_PIXEL_HEIGHT
+
+# Sumber Video Default jika tidak ditentukan di URL
+DEFAULT_VIDEO_SOURCE = "https://www.youtube.com/watch?v=KMJS66jBtVQ&pp=ygUccmVrYW1hbiBjY3R2IHBlbmd1bmp1bmcgdG9rbw%3D%3D"
+YOUTUBE_RESOLUTION = '720p'
 
 # Data statistik global real-time
 current_stats = {
@@ -44,25 +47,49 @@ def estimate_height(box_y1, box_y2, frame_height):
     estimated_height_cm = (pixel_height * CM_PER_PIXEL) / normalized_y
     return round(estimated_height_cm, 1)
 
+def get_video_capture(source):
+    """
+    Penanganan sumber video: 
+    - Integrated Camera (Webcam) -> '0' atau 'webcam'
+    - Video YouTube -> URL mengandung 'youtube.com' / 'youtu.be'
+    - File Lokal -> 'tester-cctv1.mp4'
+    """
+    if str(source) == '0' or str(source).lower() == 'webcam':
+        print("[INFO] Membuka Integrated Camera (Device 0)...")
+        return cv2.VideoCapture(0)
+    elif isinstance(source, str) and ("youtube.com" in source or "youtu.be" in source):
+        print(f"[INFO] Membuka Stream YouTube: {source}")
+        return cap_from_youtube(source, resolution=YOUTUBE_RESOLUTION)
+    else:
+        print(f"[INFO] Membuka File/CCTV Stream: {source}")
+        return cv2.VideoCapture(source)
+
 # --- ENDPOINT STATISTIK FOR FRONTEND ---
 @app.route('/api/stats', methods=['GET', 'OPTIONS'])
 def get_stats():
     return jsonify(current_stats), 200
 
 # Function video processing
-def process_video():
+def process_video(video_source):
     global current_stats
-    cap = cv2.VideoCapture("tester-cctv1.mp4")
+    cap = get_video_capture(video_source)
 
-    while cap.isOpened():
+    while True:
         success, frame = cap.read()
         if not success:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Loop video jika selesai
+            # Jika video habis atau disconnect, reconnect/looping frame awal
+            cap.release()
+            cap = get_video_capture(video_source)
+            
+            # Khusus file MP4 lokal, balikkan ke frame awal
+            if isinstance(video_source, str) and not ("youtube.com" in video_source or "youtu.be" in video_source):
+                if str(video_source) not in ['0', 'webcam'] and not video_source.startswith("rtsp://"):
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             continue
 
         frame_h, frame_w, _ = frame.shape
 
-        # Deteksi manusia saja (class 0)
+        # Deteksi manusia saja (class 0) - mempertahankan logika asli kamu
         results = model(frame, stream=True, classes=[0])
 
         heights_in_frame = []
@@ -108,9 +135,13 @@ def process_video():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
+    cap.release()
+
 @app.route('/video_feed')
 def video_feed():
-    return Response(process_video(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Mengambil parameter source dari query URL jika ada, contoh: /video_feed?source=0
+    source = request.args.get('source', DEFAULT_VIDEO_SOURCE)
+    return Response(process_video(source), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
