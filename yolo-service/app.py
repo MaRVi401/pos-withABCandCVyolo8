@@ -15,8 +15,8 @@ KNOWN_HEIGHT_CM = 170.0
 REFERENCE_PIXEL_HEIGHT = 340.0
 CM_PER_PIXEL = KNOWN_HEIGHT_CM / REFERENCE_PIXEL_HEIGHT
 
-DEFAULT_VIDEO_SOURCE = "tester-cctv1.mp4"
-YOUTUBE_RESOLUTION = '480p'  # Turunkan ke 480p agar koneksi lebih stabil & minim reset
+DEFAULT_VIDEO_SOURCE = "https://www.youtube.com/watch?v=KMJS66jBtVQ&pp=ygUccmVrYW1hbiBjY3R2IHBlbmd1bmp1bmcgdG9rb9IHCQk_DAGHKiGM7w%3D%3D"
+YOUTUBE_RESOLUTION = '360p'
 
 current_stats = {
     "detected_count": 0,
