@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'flask_url' => env('FLASK_YOLO_URL', 'http://localhost:5000'),
+
 ];

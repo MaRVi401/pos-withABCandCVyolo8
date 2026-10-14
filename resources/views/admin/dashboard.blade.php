@@ -13,8 +13,7 @@
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Produk API</p>
                     <h3 class="text-2xl font-bold text-gray-800 mt-1" x-text="products.length + ' Item'">0 Item</h3>
                 </div>
-                <div
-                    class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg">
+                <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg">
                     📦
                 </div>
             </div>
@@ -24,8 +23,7 @@
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status REST API</p>
                     <h3 class="text-xl font-bold text-emerald-600 mt-1">Terhubung</h3>
                 </div>
-                <div
-                    class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 font-bold text-lg">
+                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 font-bold text-lg">
                     ⚡
                 </div>
             </div>
@@ -35,8 +33,7 @@
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Algoritma ABC</p>
                     <h3 class="text-xl font-bold text-indigo-600 mt-1">Ready</h3>
                 </div>
-                <div
-                    class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 font-bold text-lg">
+                <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 font-bold text-lg">
                     🐝
                 </div>
             </div>
@@ -46,19 +43,16 @@
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">User Logged-In</p>
                     <h3 class="text-sm font-bold text-gray-800 mt-1" x-text="userInfo.name || 'Admin'">Admin</h3>
                 </div>
-                <div
-                    class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 font-bold text-lg">
+                <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 font-bold text-lg">
                     👤
                 </div>
             </div>
         </div>
 
         <!-- Quick Action / Banner Smart Optimasi ABC -->
-        <div
-            class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="space-y-2 text-center md:text-left">
-                <span
-                    class="inline-block bg-amber-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                <span class="inline-block bg-amber-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
                     🐝 Artificial Bee Colony
                 </span>
                 <h2 class="text-xl font-bold">Optimasi Paket Bundling Otomatis</h2>
@@ -74,49 +68,54 @@
             </button>
         </div>
 
-        <!-- Live CCTV Visitor Counter (YOLOv8 & Flask Integration) -->
+        <!-- Live CCTV Visitor Counter & Height Analytics (YOLOv8 & Flask Integration) -->
         <div class="bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 overflow-hidden">
             <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
                 <div class="flex items-center gap-3">
                     <span class="text-xl">📹</span>
                     <div>
-                        <h3 class="font-bold text-sm text-cyan-400">Live CCTV Visitor Counter (YOLOv8)</h3>
-                        <p class="text-xs text-slate-400">Deteksi & Tracking Pengunjung Real-time via Python Flask Stream
-                        </p>
+                        <h3 class="font-bold text-sm text-cyan-400">Live CCTV Analytics & Visitor Counter (YOLOv8)</h3>
+                        <p class="text-xs text-slate-400">Deteksi, Estimasi Tinggi Badan & Analytics Real-time via Python Flask</p>
                     </div>
                 </div>
-                <span
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE STREAM
                 </span>
             </div>
 
             <div class="p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                <!-- GRID UTAMA: STREAM CCTV & METRICS CARD -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     <!-- Stream Video Feed dari Flask Service -->
                     <div class="lg:col-span-2">
-                        <div
-                            class="relative bg-black rounded-xl overflow-hidden border border-slate-800 min-h-[300px] flex items-center justify-center shadow-inner">
-                            <!-- Ditambahkan id="yolo-stream-img" -->
-                            <img id="yolo-stream-img" src="http://localhost:5000/video_feed" alt="CCTV Stream Feed"
+                        <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 min-h-[340px] flex items-center justify-center shadow-inner">
+                            <img id="yolo-stream-img" src="{{ config('app.flask_url') }}/video_feed" alt="CCTV Stream Feed"
                                 class="w-full h-auto object-cover rounded-xl"
                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/640x360/0f172a/94a3b8?text=CCTV+Offline+/+Server+Flask+Belum+Jalan';" />
                         </div>
                     </div>
 
-                    <!-- Card Stats Total Pengunjung Real-time -->
+                    <!-- Side Cards Stats Real-time -->
                     <div class="space-y-4">
-                        <div
-                            class="p-5 text-center bg-gradient-to-br from-cyan-600 to-blue-700 rounded-xl shadow-lg border border-cyan-500/30">
-                            <p class="text-xs font-extrabold uppercase tracking-wider text-cyan-100">Pengunjung Terdeteksi
-                            </p>
-                            <!-- Ditambahkan x-text="visitorCount" agar reaktif dengan Alpine.js -->
-                            <h1 class="text-5xl font-extrabold text-white mt-2" x-text="visitorCount">0</h1>
+                        <!-- Card 1: Jumlah Pengunjung -->
+                        <div class="p-5 bg-gradient-to-br from-cyan-600 to-blue-700 rounded-xl shadow-lg border border-cyan-500/30 text-center">
+                            <p class="text-xs font-extrabold uppercase tracking-wider text-cyan-100">Pengunjung Terdeteksi</p>
+                            <h1 class="text-5xl font-extrabold text-white mt-1" x-text="visitorCount">0</h1>
                             <p class="text-[11px] text-cyan-200 mt-1">Orang Dalam Area CCTV</p>
                         </div>
 
-                        <div
-                            class="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-300">
+                        <!-- Card 2: Rata-Rata Tinggi Badan -->
+                        <div class="p-5 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl shadow-lg border border-purple-500/30 text-center">
+                            <p class="text-xs font-extrabold uppercase tracking-wider text-purple-100">Rata-Rata Tinggi Badan</p>
+                            <div class="flex items-baseline justify-center gap-1 mt-1">
+                                <h1 class="text-4xl font-extrabold text-white" x-text="avgHeight">0.0</h1>
+                                <span class="text-lg font-bold text-purple-200">cm</span>
+                            </div>
+                            <p class="text-[11px] text-purple-200 mt-1">Estimasi Real-time YOLOv8</p>
+                        </div>
+
+                        <!-- System Technical Details -->
+                        <div class="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-300">
                             <div class="flex justify-between items-center pb-2 border-b border-slate-800">
                                 <span class="text-slate-400">Status Flask:</span>
                                 <span class="font-bold text-emerald-400">Connected (Port 5000)</span>
@@ -137,8 +136,7 @@
 
         <!-- Data Table Produk dari REST API -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div
-                class="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50">
+            <div class="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50">
                 <div>
                     <h3 class="font-bold text-gray-800 text-sm">Katalog Produk (Diambil dari `/api/v1/products`)</h3>
                     <p class="text-xs text-gray-500">Membaca data MySQL melalui REST API & Sanctum Token</p>
@@ -286,6 +284,7 @@
                     abcModalOpen: false,
                     abcResult: null,
                     visitorCount: 0,
+                    avgHeight: 0.0,
 
                     initDashboard() {
                         const user = localStorage.getItem('user_info');
@@ -346,7 +345,7 @@
                     },
 
                     startYoloPolling() {
-                        const FLASK_BASE_URL = "{{ env('FLASK_YOLO_URL', 'http://localhost:5000') }}";
+                        const FLASK_BASE_URL = "{{ config('app.flask_url') }}";
 
                         const streamImg = document.getElementById('yolo-stream-img');
                         if (streamImg && streamImg.src !== `${FLASK_BASE_URL}/video_feed`) {
@@ -363,7 +362,8 @@
 
                                 if (response.ok) {
                                     const data = await response.json();
-                                    this.visitorCount = data.total_detected;
+                                    this.visitorCount = data.detected_count ?? data.total_detected ?? 0;
+                                    this.avgHeight = data.avg_height_cm ?? 0.0;
                                 }
                             } catch (error) {
                                 console.error('Error fetching YOLO stats:', error);

@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// 1. Route Root langsung di-redirect ke halaman login
+// 1. Route Welcome Page
 Route::get('/', function () {
     return view('welcome');
 });
@@ -32,18 +32,22 @@ Route::get('/admin/reports', function () {
     return view('admin.reports');
 });
 
+// 7. Route Admin Management Categories
 Route::get('/admin/categories', function () {
     return view('admin.categories');
 });
 
+// 8. Route Admin Product Adjustments
 Route::get('/admin/products', function () {
     return view('admin.products');
 });
 
+// 9. Route Admin Stock Adjustments
 Route::get('/admin/stock-adjustments', function () {
     return view('admin.stock_adjustments');
 });
 
+// 10. Route Admin Management Customers
 Route::get('/admin/customers', function () {
     return view('admin.customers');
 });
