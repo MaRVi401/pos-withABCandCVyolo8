@@ -8,6 +8,7 @@
     <title>@yield('title', 'Admin Dashboard - POS System')</title>
     <link rel="icon" type="image/x-icon"
         href="https://i.pinimg.com/736x/90/0c/9e/900c9e431963432cb0f5fbe7c5f5af91.jpg">
+    
     <!-- SCRIPT CEK TOKEN AUTHENTICATION SEBELUM MEMATUHI LAYOUT -->
     <script>
         const token = localStorage.getItem('auth_token');
@@ -16,10 +17,89 @@
         }
     </script>
 
-    <!-- Tailwind CSS & Alpine.js CDN -->
+    <!-- Tailwind CSS, Alpine.js & Marked.js CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Custom Style untuk Merapikan Output Markdown & Tabel Chatbot -->
+    <style>
+        [x-cloak] { display: none !important; }
+
+        /* Custom Styling Tabel & Content Chatbot */
+        .chat-content {
+            font-size: 0.75rem; /* 12px */
+            line-height: 1.5;
+        }
+
+        .chat-content p {
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.7rem;
+            background-color: #ffffff;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chat-content th {
+            background-color: #f1f5f9; /* Slate 100 */
+            color: #1e293b; /* Slate 800 */
+            font-weight: 600;
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        .chat-content td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        /* Zebra striping untuk baris tabel */
+        .chat-content tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .chat-content tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* Formatting List / Poin */
+        .chat-content ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-content ol {
+            list-style-type: decimal;
+            padding-left: 1.25rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-content li {
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-content strong {
+            font-weight: 600;
+            color: #0f172a;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 font-sans antialiased" x-data="adminLayout()">
@@ -42,8 +122,7 @@
                         <span>Dashboard</span>
                     </a>
 
-                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Katalog & Stok
-                    </div>
+                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Katalog & Stok</div>
 
                     <!-- Kategori Produk -->
                     <a href="{{ url('/admin/categories') }}"
@@ -63,8 +142,7 @@
                         <span>Penyesuaian Stok</span>
                     </a>
 
-                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaksi & POS
-                    </div>
+                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaksi & POS</div>
 
                     <!-- Kasir (POS) -->
                     <a href="{{ url('/admin/pos') }}"
@@ -78,8 +156,7 @@
                         <span>Laporan Penjualan</span>
                     </a>
 
-                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Smart Optimasi
-                    </div>
+                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Smart Optimasi</div>
 
                     <!-- Smart Bundling (ABC) -->
                     <a href="{{ url('/admin/abc') }}"
@@ -88,8 +165,7 @@
                         <span class="bg-indigo-500 text-xs px-2 py-0.5 rounded-full text-white font-bold">AI</span>
                     </a>
 
-                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Manajemen
-                        Pengguna</div>
+                    <div class="pt-4 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Manajemen Pengguna</div>
 
                     <!-- Data Pelanggan -->
                     <a href="{{ url('/admin/customers') }}"
@@ -163,14 +239,15 @@
                 </div>
 
                 <!-- Chat Container / Messages List -->
-                <div id="chatContainer" class="p-4 flex-1 overflow-y-auto bg-gray-50 text-xs space-y-3">
+                <div id="chatContainer" class="p-4 flex-1 overflow-y-auto bg-gray-50 space-y-3">
                     <template x-for="(msg, index) in messages" :key="index">
                         <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                            <div
-                                :class="msg.role === 'user' ?
-                                    'bg-indigo-600 text-white p-3 rounded-xl max-w-[85%] leading-relaxed' :
-                                    'bg-indigo-100 text-indigo-900 p-3 rounded-xl max-w-[85%] leading-relaxed shadow-sm'">
-                                <p x-html="marked.parse(msg.content)" class="whitespace-pre-wrap"></p>
+                            <div :class="msg.role === 'user' 
+                                ? 'bg-indigo-600 text-white p-3 rounded-xl max-w-[85%] leading-relaxed' 
+                                : 'bg-white text-gray-800 p-3 rounded-xl max-w-[90%] leading-relaxed shadow-sm border border-gray-100'">
+                                
+                                <!-- Render HTML via Marked.js dengan Styling CSS Custom -->
+                                <div class="chat-content overflow-x-auto" x-html="marked.parse(msg.content || '')"></div>
                             </div>
                         </div>
                     </template>
