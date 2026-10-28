@@ -19,6 +19,7 @@
     <!-- Tailwind CSS & Alpine.js CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body class="bg-gray-100 font-sans antialiased" x-data="adminLayout()">
@@ -169,7 +170,7 @@
                                 :class="msg.role === 'user' ?
                                     'bg-indigo-600 text-white p-3 rounded-xl max-w-[85%] leading-relaxed' :
                                     'bg-indigo-100 text-indigo-900 p-3 rounded-xl max-w-[85%] leading-relaxed shadow-sm'">
-                                <p x-text="msg.content" class="whitespace-pre-wrap"></p>
+                                <p x-html="marked.parse(msg.content)" class="whitespace-pre-wrap"></p>
                             </div>
                         </div>
                     </template>
