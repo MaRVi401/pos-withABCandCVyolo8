@@ -137,6 +137,7 @@
 
         <!-- FLOATING CHATBOT WIDGET -->
         <div class="fixed bottom-6 right-6 z-50">
+            <!-- Chat Toggle Button -->
             <button @click="chatOpen = !chatOpen"
                 class="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,9 +147,12 @@
                 </svg>
             </button>
 
-            <div x-show="chatOpen" x-transition
-                class="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div class="bg-indigo-600 text-white p-4 flex justify-between items-center">
+            <!-- Chat Modal Window -->
+            <div x-show="chatOpen" x-transition x-cloak
+                class="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[480px]">
+
+                <!-- Header Chat -->
+                <div class="bg-indigo-600 text-white p-4 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-bold text-sm">AI Operational Assistant</h3>
                         <p class="text-xs text-indigo-200">Asisten cerdas pencarian stok & transaksi</p>
@@ -157,18 +161,39 @@
                         class="text-indigo-200 hover:text-white font-bold text-lg">&times;</button>
                 </div>
 
-                <div class="p-4 h-64 overflow-y-auto bg-gray-50 text-xs space-y-3">
-                    <div class="bg-indigo-100 text-indigo-900 p-3 rounded-xl max-w-[85%] leading-relaxed">
-                        Halo Admin! Ada yang bisa saya bantu cek seputar stok barang atau ringkasan penjualan hari ini?
+                <!-- Chat Container / Messages List -->
+                <div id="chatContainer" class="p-4 flex-1 overflow-y-auto bg-gray-50 text-xs space-y-3">
+                    <template x-for="(msg, index) in messages" :key="index">
+                        <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                            <div
+                                :class="msg.role === 'user' ?
+                                    'bg-indigo-600 text-white p-3 rounded-xl max-w-[85%] leading-relaxed' :
+                                    'bg-indigo-100 text-indigo-900 p-3 rounded-xl max-w-[85%] leading-relaxed shadow-sm'">
+                                <p x-text="msg.content" class="whitespace-pre-wrap"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Loading Typing Indicator -->
+                    <div x-show="loading" class="flex justify-start">
+                        <div class="bg-gray-200 text-gray-600 p-3 rounded-xl max-w-[85%] flex items-center gap-1">
+                            <span class="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
+                            <span class="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                            <span class="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="p-3 border-t bg-white flex gap-2">
-                    <input type="text" placeholder="Tanyakan sesuatu ke AI..."
-                        class="flex-1 text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <button
-                        class="bg-indigo-600 text-white text-xs px-3 py-2 rounded-lg font-medium hover:bg-indigo-700">Kirim</button>
-                </div>
+                <!-- Input Box & Form -->
+                <form @submit.prevent="sendMessage()" class="p-3 border-t bg-white flex gap-2 shrink-0">
+                    <input type="text" x-model="newMessage" :disabled="loading"
+                        placeholder="Tanyakan sesuatu ke AI..."
+                        class="flex-1 text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100">
+                    <button type="submit" :disabled="loading || !newMessage.trim()"
+                        class="bg-indigo-600 text-white text-xs px-3 py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50">
+                        Kirim
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -207,14 +232,85 @@
         function adminLayout() {
             return {
                 chatOpen: false,
+                loading: false,
+                newMessage: '',
                 user: JSON.parse(localStorage.getItem('user_info') || '{}'),
+                messages: [{
+                    role: 'assistant',
+                    content: 'Halo Admin! Ada yang bisa saya bantu cek seputar stok barang atau ringkasan penjualan hari ini?'
+                }],
+
+                async sendMessage() {
+                    if (!this.newMessage.trim() || this.loading) return;
+
+                    const userText = this.newMessage.trim();
+
+                    // 1. Tambahkan pesan user ke UI
+                    this.messages.push({
+                        role: 'user',
+                        content: userText
+                    });
+                    this.newMessage = '';
+                    this.loading = true;
+                    this.scrollToBottom();
+
+                    // 2. Ambil token & history percakapan
+                    const token = localStorage.getItem('auth_token');
+                    const history = this.messages.slice(0, -1); // Kirim riwayat obrolan terdahulu
+
+                    try {
+                        const response = await fetch('/api/v1/chatbot/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                message: userText,
+                                history: history
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.status === 'success') {
+                            this.messages.push({
+                                role: 'assistant',
+                                content: data.reply
+                            });
+                        } else {
+                            this.messages.push({
+                                role: 'assistant',
+                                content: data.message || 'Maaf, terjadi kesalahan saat menghubungi server AI.'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error Chatbot API:', error);
+                        this.messages.push({
+                            role: 'assistant',
+                            content: 'Gagal terhubung ke server AI. Pastikan koneksi internet Anda stabil.'
+                        });
+                    } finally {
+                        this.loading = false;
+                        this.scrollToBottom();
+                    }
+                },
+
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = document.getElementById('chatContainer');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                },
+
                 async logout() {
-                    // Alert Konfirmasi sebelum keluar
                     if (confirm("Apakah Anda yakin ingin keluar dari sistem POS?")) {
                         const token = localStorage.getItem('auth_token');
 
                         try {
-                            // Panggil API Logout untuk revoking token Sanctum di database
                             await fetch('/api/v1/auth/logout', {
                                 method: 'POST',
                                 headers: {
@@ -227,14 +323,9 @@
                             console.error("Gagal revoking token di API:", e);
                         }
 
-                        // Alert Notifikasi Berhasil Logout
                         alert("Anda telah berhasil logout.");
-
-                        // Hapus data autentikasi dari LocalStorage
                         localStorage.removeItem('auth_token');
                         localStorage.removeItem('user_info');
-
-                        // Redirect kembali ke Halaman Utama
                         window.location.href = '/';
                     }
                 }
