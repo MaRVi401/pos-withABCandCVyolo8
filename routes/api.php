@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\StockAdjustmentController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\ChatbotController;
 
 Route::prefix('v1')->group(function () {
     // 1. Guest Routes (Tanpa Auth)
@@ -46,5 +47,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/reports/sales', [ReportController::class, 'index']);
         Route::get('/reports/sales/export-pdf', [ReportController::class, 'exportPdf']);
         Route::get('/reports/sales/export-excel', [ReportController::class, 'exportExcel']);
+        
+        // 9. Routes untuk Chatbot AI
+        Route::post('/chatbot/chat', [ChatbotController::class, 'chat']);
     });
+
+
 });
