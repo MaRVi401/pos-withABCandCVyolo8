@@ -129,7 +129,15 @@ def process_video(video_source):
 @app.route('/video_feed')
 def video_feed():
     source = request.args.get('source', DEFAULT_VIDEO_SOURCE)
-    return Response(process_video(source), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    # Buat objek response
+    response = Response(process_video(source), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    # Tambahkan response header untuk bypass warning ngrok & izinkan CORS
+    response.headers['ngrok-skip-browser-warning'] = 'true'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = '*'
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
