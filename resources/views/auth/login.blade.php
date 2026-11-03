@@ -60,7 +60,7 @@
         <div class="mt-6 space-y-2">
             <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
                 <p class="font-bold text-slate-800 mb-1 flex items-center justify-between">
-                    <span>Akun Testing Admin:</span>
+                    <span>Akun Admin:</span>
                     <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full uppercase">Bisa Login</span>
                 </p>
                 <p><strong>Email:</strong> admin@pos.com</p>

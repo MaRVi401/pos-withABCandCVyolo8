@@ -67,7 +67,7 @@ class AuthController extends Controller
                 'token_type'   => 'Bearer',
                 'user'         => [
                     'user_id'   => $user->user_id,
-                    'role_id'   => $user->role_id, // Disertakan agar frontend bisa cek role
+                    'role_id'   => $user->role_id, 
                     'role_name' => $user->role->role_name ?? 'Admin',
                     'name'      => $user->name,
                     'email'     => $user->email,

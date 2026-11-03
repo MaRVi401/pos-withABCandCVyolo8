@@ -25,32 +25,29 @@ Route::prefix('v1')->group(function () {
             Route::get('/products', [ProductController::class, 'index']);
             Route::get('/abc/generate-bundle', [ABCController::class, 'generateBundle']);
             Route::get('/reports/sales', [ReportController::class, 'index']);
+            // 4. Routes untuk sistem POS (Point of Sale) - Admin
+            Route::post('/transactions', [TransactionController::class, 'store']);
+            Route::get('/transactions', [TransactionController::class, 'index']);
+
+            // 5. Routes untuk Admin dan Customer
+            Route::apiResource('categories', CategoryController::class);
+            Route::apiResource('products', ProductController::class);
+
+            // 6. Routes untuk Stock Adjustment
+            Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index']);
+            Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);
+
+            // 7. Routes untuk Customer Management        
+            Route::apiResource('customers', CustomerController::class);
+            Route::patch('/customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
+
+            // 8. Routes untuk Report Management
+            Route::get('/reports/sales', [ReportController::class, 'index']);
+            Route::get('/reports/sales/export-pdf', [ReportController::class, 'exportPdf']);
+            Route::get('/reports/sales/export-excel', [ReportController::class, 'exportExcel']);
+
+            // 9. Routes untuk Chatbot AI
+            Route::post('/chatbot/chat', [ChatbotController::class, 'chat']);
         });
-
-        // 4. Routes untuk sistem POS (Point of Sale) - Admin
-        Route::post('/transactions', [TransactionController::class, 'store']);
-        Route::get('/transactions', [TransactionController::class, 'index']);
-        
-        // 5. Routes untuk Admin dan Customer
-        Route::apiResource('categories', CategoryController::class);
-        Route::apiResource('products', ProductController::class);
-
-        // 6. Routes untuk Stock Adjustment
-        Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index']);
-        Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);
-
-        // 7. Routes untuk Customer Management        
-        Route::apiResource('customers', CustomerController::class);
-        Route::patch('/customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
-
-        // 8. Routes untuk Report Management
-        Route::get('/reports/sales', [ReportController::class, 'index']);
-        Route::get('/reports/sales/export-pdf', [ReportController::class, 'exportPdf']);
-        Route::get('/reports/sales/export-excel', [ReportController::class, 'exportExcel']);
-        
-        // 9. Routes untuk Chatbot AI
-        Route::post('/chatbot/chat', [ChatbotController::class, 'chat']);
     });
-
-
 });

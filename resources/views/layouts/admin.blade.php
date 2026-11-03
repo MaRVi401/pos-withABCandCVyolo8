@@ -283,7 +283,7 @@
         const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
 
         if (!tokenCheck || (userInfo.role_id && parseInt(userInfo.role_id) !== 1)) {
-            alert('Akses khusus Admin! Akun Customer tidak diizinkan masuk ke Web Admin.');
+            alert('Akses khusus Admin!');
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user_info');
             window.location.href = '/login';
