@@ -7,7 +7,8 @@ from ultralytics import YOLO
 from cap_from_youtube import cap_from_youtube
 
 app = Flask(__name__)
-CORS(app)
+# Izinkan CORS untuk semua route dan origin
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 model = YOLO('yolov8n.pt')
 
@@ -44,7 +45,6 @@ def get_video_capture(source):
     elif isinstance(source, str) and ("youtube.com" in source or "youtu.be" in source):
         print(f"[INFO] Membuka Stream YouTube: {source}")
         try:
-            # Gunakan cap_from_youtube dengan penanganan exception
             return cap_from_youtube(source, resolution=YOUTUBE_RESOLUTION)
         except Exception as e:
             print(f"[ERROR] Gagal membuka stream YouTube: {e}")
@@ -70,23 +70,28 @@ def process_video(video_source):
             continue
 
         success, frame = cap.read()
+        
+        # Jika frame habis (misal video file MP4 selesai)
         if not success:
-            print("[WARNING] Frame tidak terbaca. Mereconnect stream...")
-            cap.release()
-            time.sleep(1)
-            cap = get_video_capture(video_source)
-            
-            # Khusus file lokal MP4
+            # Jika sumber adalah file lokal, reset ke frame awal (Loop Video)
             if isinstance(video_source, str) and not ("youtube.com" in video_source or "youtu.be" in video_source):
                 if str(video_source) not in ['0', 'webcam'] and not video_source.startswith("rtsp://"):
-                    if cap and cap.isOpened():
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            continue
+                    print("[INFO] Video selesai. Mengulang ke frame 0...")
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    success, frame = cap.read()
+
+            # Jika masih gagal (stream terputus), coba reconnect
+            if not success:
+                print("[WARNING] Frame tidak terbaca. Mereconnect stream...")
+                cap.release()
+                time.sleep(1)
+                cap = get_video_capture(video_source)
+                continue
 
         frame_h, frame_w, _ = frame.shape
 
-        # Deteksi YOLOv8
-        results = model(frame, stream=True, classes=[0])
+        # Deteksi YOLOv8 (Class 0 = Person)
+        results = model(frame, stream=True, classes=[0], verbose=False)
 
         heights_in_frame = []
         person_count = 0
@@ -107,8 +112,8 @@ def process_video(video_source):
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
                     (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-                    cv2.rectangle(frame, (x1, y1 - 22), (x1 + w, y1), (0, 255, 0), -1)
-                    cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+                    cv2.rectangle(frame, (x1, max(0, y1 - 22)), (x1 + w, y1), (0, 255, 0), -1)
+                    cv2.putText(frame, label, (x1, max(10, y1 - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
         avg_height = round(float(np.mean(heights_in_frame)), 1) if heights_in_frame else 0.0
 
@@ -119,6 +124,7 @@ def process_video(video_source):
         summary_text = f"Pengunjung: {person_count} | Rata-Rata Tinggi: {avg_height} cm"
         cv2.putText(frame, summary_text, (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
+        # Encode frame ke JPG
         _, buffer = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
@@ -126,14 +132,27 @@ def process_video(video_source):
     if cap:
         cap.release()
 
-@app.route('/video_feed')
+@app.route('/video_feed', methods=['GET', 'OPTIONS'])
 def video_feed():
+    if request.method == 'OPTIONS':
+        response = Response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        return response
+
     source = request.args.get('source', DEFAULT_VIDEO_SOURCE)
     
-    # Buat objek response
-    response = Response(process_video(source), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Buat objek response stream MJPEG
+    response = Response(
+        process_video(source), 
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
     
-    # Tambahkan response header untuk bypass warning ngrok & izinkan CORS
+    # Header wajib agar browser/ngrok tidak me-cache stream
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
     response.headers['ngrok-skip-browser-warning'] = 'true'
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = '*'

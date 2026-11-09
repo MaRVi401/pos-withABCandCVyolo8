@@ -98,8 +98,9 @@
                     <div class="lg:col-span-2">
                         <div
                             class="relative bg-black rounded-xl overflow-hidden border border-slate-800 min-h-[340px] flex items-center justify-center shadow-inner">
-                            <img id="yolo-stream-img" alt="CCTV Stream Feed"
-                                class="w-full h-auto object-cover rounded-xl" />
+                            <img id="yolo-stream-img" :src="flaskUrl ? `${flaskUrl}/video_feed` : ''" alt="CCTV Stream Feed"
+                                class="w-full h-auto object-cover rounded-xl"
+                                onerror="this.onerror=null; this.src='https://via.placeholder.com/640x480?text=CCTV+Stream+Offline';" />
                         </div>
                     </div>
 
@@ -300,6 +301,8 @@
                     abcResult: null,
                     visitorCount: 0,
                     avgHeight: 0.0,
+                    flaskConnected: false,
+                    flaskUrl: "{{ rtrim(config('app.flask_url', 'http://127.0.0.1:5000'), '/') }}",
 
                     initDashboard() {
                         const user = localStorage.getItem('user_info');
@@ -307,7 +310,7 @@
                             this.userInfo = JSON.parse(user);
                         }
                         this.fetchProducts();
-                        this.startYoloPolling();
+                        this.startYoloStatsPolling();
                     },
 
                     async fetchProducts() {
@@ -359,14 +362,11 @@
                         }
                     },
 
-                    startYoloPolling() {
-                        const FLASK_BASE_URL = "{{ rtrim(config('app.flask_url'), '/') }}";
-                        const imgElement = document.getElementById('yolo-stream-img');
-
-                        // 1. Polling Data Statistik (Pengunjung & Tinggi Badan)
+                    startYoloStatsPolling() {
+                        // Polling statistik JSON saja dari Flask (/api/stats) setiap 1 detik
                         const fetchYoloStats = async () => {
                             try {
-                                const response = await fetch(`${FLASK_BASE_URL}/api/stats`, {
+                                const response = await fetch(`${this.flaskUrl}/api/stats`, {
                                     headers: {
                                         'ngrok-skip-browser-warning': 'true'
                                     }
@@ -376,48 +376,18 @@
                                     const data = await response.json();
                                     this.visitorCount = data.detected_count ?? data.total_detected ?? 0;
                                     this.avgHeight = data.avg_height_cm ?? 0.0;
+                                    this.flaskConnected = true;
+                                } else {
+                                    this.flaskConnected = false;
                                 }
                             } catch (error) {
+                                this.flaskConnected = false;
                                 console.error('Error fetching YOLO stats:', error);
                             }
                         };
 
-                        // 2. Loop Fetch Gambar Frame CCTV (Bypass ERR_NGROK_6024)
-                        let isFetchingFrame = false;
-                        const fetchCctvFrame = async () => {
-                            if (isFetchingFrame || !imgElement) return;
-                            isFetchingFrame = true;
-
-                            try {
-                                const response = await fetch(`${FLASK_BASE_URL}/video_feed?t=${Date.now()}`, {
-                                    headers: {
-                                        'ngrok-skip-browser-warning': 'true'
-                                    }
-                                });
-
-                                if (response.ok) {
-                                    const blob = await response.blob();
-                                    const previousUrl = imgElement.src;
-                                    imgElement.src = URL.createObjectURL(blob);
-
-                                    // Cleanup memory object URL lama
-                                    if (previousUrl && previousUrl.startsWith('blob:')) {
-                                        URL.revokeObjectURL(previousUrl);
-                                    }
-                                }
-                            } catch (err) {
-                                console.error('Gagal memuat frame CCTV via fetch:', err);
-                            } finally {
-                                isFetchingFrame = false;
-                            }
-                        };
-
-                        // Jalankan Polling Data dan Refresh Frame
                         fetchYoloStats();
                         setInterval(fetchYoloStats, 1000);
-
-                        // Refresh gambar CCTV ~10-15 FPS
-                        setInterval(fetchCctvFrame, 100);
                     }
                 }
             }
