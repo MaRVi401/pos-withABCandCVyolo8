@@ -189,4 +189,4 @@ Laporan analisis dapat diakses pada panel Admin melalui menu **ABC Analysis**.
 
 ## 📄 Lisensi
 
-Pake aja lah bebas :v
+Pake aja lah bebas coyyy :v
