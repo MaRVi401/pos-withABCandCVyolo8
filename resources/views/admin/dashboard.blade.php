@@ -102,6 +102,19 @@
                                 class="w-full h-auto object-cover rounded-xl"
                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/640x480?text=CCTV+Stream+Offline';" />
                         </div>
+                        <!-- Kalibrasi lantai -->
+                        <div class="mt-3 flex flex-wrap items-center gap-3">
+                            <button type="button" @click="openCalibration()"
+                                class="px-4 py-2 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white">
+                                📐 Kalibrasi Lantai
+                            </button>
+                            <span x-show="calibInfo" class="text-[11px] font-semibold text-emerald-400">
+                                ✔ Terkalibrasi: <span x-text="calibInfo ? `${calibInfo.width_cm} × ${calibInfo.length_cm} cm` : ''"></span>
+                            </span>
+                            <span x-show="!calibInfo" class="text-[11px] font-semibold text-amber-400">
+                                ⚠ Belum dikalibrasi, tinggi badan masih estimasi kasar.
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Side Cards Stats Real-time -->
@@ -160,6 +173,119 @@
                                 <span class="text-slate-400">Target Class:</span>
                                 <span class="font-semibold text-slate-200">Person (Class ID 0)</span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL KALIBRASI LANTAI -->
+        <div x-show="calibOpen" x-cloak @keydown.escape.window="calibOpen = false"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div class="bg-slate-900 text-slate-100 rounded-2xl border border-slate-700 shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+                <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="font-bold text-sm text-cyan-400">Kalibrasi Lantai CCTV</h3>
+                    <button type="button" @click="calibOpen = false" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+                </div>
+
+                <div class="p-4 space-y-4">
+                    <p class="text-xs text-slate-300">
+                        Tarik <b>garis kotak</b> sampai pas dengan tepi lantai di gambar. Titik putih di sudut dipakai
+                        untuk mengatur kemiringan. Tarik bagian dalam kotak untuk menggeser seluruhnya.
+                        <b class="text-cyan-300">Garis biru (atas &amp; bawah) = Lebar</b>,
+                        <b class="text-amber-300">garis kuning (kiri &amp; kanan) = Panjang</b>.
+                        Kalau sudut lantai yang sebenarnya ada di luar jangkauan kamera, tarik titik atau garis ke area gelap di
+                        sekeliling gambar (garis putus-putus = tepi kamera), ikuti arah garis tepi lantai.
+                    </p>
+
+                    <div class="relative bg-black rounded-xl border border-slate-800 select-none p-4 flex justify-center">
+                        <template x-if="calibLoading">
+                            <div class="p-10 text-center text-xs text-slate-400">Mengambil gambar dari CCTV...</div>
+                        </template>
+                        <template x-if="!calibLoading && calibImg">
+                            <div id="calib-box" class="relative" style="touch-action: none; background: #0b1220"
+                                :style="`width: min(100%, calc(66vh * ${calibFrame.w / calibFrame.h})); aspect-ratio: ${calibFrame.w} / ${calibFrame.h}`"
+                                @pointermove.window="onCalibDrag($event)" @pointerup.window="calibDrag = null"
+                                @pointercancel.window="calibDrag = null">
+
+                                <!-- Gambar CCTV di tengah; area gelap di sekelilingnya = di luar jangkauan kamera -->
+                                <img :src="calibImg" alt="Snapshot CCTV" class="absolute select-none" draggable="false"
+                                    :style="`left: ${calibMargin / (1 + 2 * calibMargin) * 100}%; top: ${calibMargin / (1 + 2 * calibMargin) * 100}%; width: ${100 / (1 + 2 * calibMargin)}%; height: ${100 / (1 + 2 * calibMargin)}%`" />
+                                <div class="absolute pointer-events-none"
+                                    style="border: 1px dashed rgba(255,255,255,0.45)"
+                                    :style="`left: ${calibMargin / (1 + 2 * calibMargin) * 100}%; top: ${calibMargin / (1 + 2 * calibMargin) * 100}%; width: ${100 / (1 + 2 * calibMargin)}%; height: ${100 / (1 + 2 * calibMargin)}%`"></div>
+
+                                <!-- Kotak lantai: tarik GARIS untuk menggeser sisi, tarik bagian dalam untuk menggeser semuanya -->
+                                <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="absolute"
+                                    style="left: 0; top: 0; width: 100%; height: 100%; pointer-events: none">
+                                    <polygon :points="calibPoints.map(p => `${stageX(p[0])},${stageY(p[1])}`).join(' ')"
+                                        fill="rgba(34,211,238,0.15)" style="pointer-events: all; cursor: move"
+                                        @pointerdown.prevent="startCalibDrag($event, 'all')"></polygon>
+                                    <line :x1="pctX(0)" :y1="pctY(0)" :x2="pctX(1)" :y2="pctY(1)" stroke="#22d3ee" stroke-width="3" vector-effect="non-scaling-stroke" style="pointer-events: none"></line>
+                                    <line :x1="pctX(0)" :y1="pctY(0)" :x2="pctX(1)" :y2="pctY(1)" stroke="transparent" stroke-width="22" vector-effect="non-scaling-stroke"
+                                        style="pointer-events: stroke; cursor: move" @pointerdown.prevent="startCalibDrag($event, 'e0')"></line>
+                                    <line :x1="pctX(1)" :y1="pctY(1)" :x2="pctX(2)" :y2="pctY(2)" stroke="#fbbf24" stroke-width="3" vector-effect="non-scaling-stroke" style="pointer-events: none"></line>
+                                    <line :x1="pctX(1)" :y1="pctY(1)" :x2="pctX(2)" :y2="pctY(2)" stroke="transparent" stroke-width="22" vector-effect="non-scaling-stroke"
+                                        style="pointer-events: stroke; cursor: move" @pointerdown.prevent="startCalibDrag($event, 'e1')"></line>
+                                    <line :x1="pctX(2)" :y1="pctY(2)" :x2="pctX(3)" :y2="pctY(3)" stroke="#22d3ee" stroke-width="3" vector-effect="non-scaling-stroke" style="pointer-events: none"></line>
+                                    <line :x1="pctX(2)" :y1="pctY(2)" :x2="pctX(3)" :y2="pctY(3)" stroke="transparent" stroke-width="22" vector-effect="non-scaling-stroke"
+                                        style="pointer-events: stroke; cursor: move" @pointerdown.prevent="startCalibDrag($event, 'e2')"></line>
+                                    <line :x1="pctX(3)" :y1="pctY(3)" :x2="pctX(0)" :y2="pctY(0)" stroke="#fbbf24" stroke-width="3" vector-effect="non-scaling-stroke" style="pointer-events: none"></line>
+                                    <line :x1="pctX(3)" :y1="pctY(3)" :x2="pctX(0)" :y2="pctY(0)" stroke="transparent" stroke-width="22" vector-effect="non-scaling-stroke"
+                                        style="pointer-events: stroke; cursor: move" @pointerdown.prevent="startCalibDrag($event, 'e3')"></line>
+                                </svg>
+
+                                <!-- Titik sudut kecil (tanpa tulisan) untuk mengatur kemiringan/perspektif -->
+                                <template x-for="(p, i) in calibPoints" :key="i">
+                                    <div class="absolute flex items-center justify-center"
+                                        style="width: 34px; height: 34px; transform: translate(-50%, -50%); cursor: grab; touch-action: none"
+                                        :style="`left: ${stageX(p[0])}%; top: ${stageY(p[1])}%`"
+                                        @pointerdown.prevent="startCalibDrag($event, i)">
+                                        <span class="block rounded-full bg-white border-2 border-slate-900 shadow"
+                                            style="width: 12px; height: 12px"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <p x-show="calibError && !calibLoading && !calibImg" class="p-6 text-center text-xs text-red-400" x-text="calibError"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                        <label class="text-xs text-slate-300">
+                            Lebar lantai (garis biru), cm
+                            <input type="number" min="1" step="any" x-model.number="calibWidth"
+                                class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500" />
+                        </label>
+                        <label class="text-xs text-slate-300">
+                            Panjang lantai (garis kuning), cm
+                            <input type="number" min="1" step="any" x-model.number="calibLength"
+                                class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500" />
+                        </label>
+                        <div class="flex gap-2">
+                            <button type="button" @click="calibPoints = defaultQuad()"
+                                class="flex-1 px-3 py-2 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700">Reset kotak</button>
+                            <button type="button" @click="reloadSnapshot()"
+                                class="flex-1 px-3 py-2 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700">Ambil ulang</button>
+                        </div>
+                    </div>
+
+                    <p class="text-xs" :class="calibMsgOk ? 'text-emerald-400' : 'text-red-400'" x-show="calibMsg" x-text="calibMsg"></p>
+
+                    <div class="flex flex-wrap justify-between gap-2 pt-2 border-t border-slate-800">
+                        <button type="button" @click="deleteCalibration()" x-show="calibInfo"
+                            class="px-4 py-2 rounded-lg text-xs font-bold bg-red-950 hover:bg-red-900 text-red-300 border border-red-900">
+                            Hapus kalibrasi
+                        </button>
+                        <span x-show="!calibInfo"></span>
+                        <div class="flex gap-2">
+                            <button type="button" @click="calibOpen = false"
+                                class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700">Tutup</button>
+                            <button type="button" @click="saveCalibration()"
+                                :disabled="calibPoints.length !== 4 || !(calibWidth > 0) || !(calibLength > 0) || calibSaving"
+                                class="px-4 py-2 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+                                <span x-show="!calibSaving">Simpan Kalibrasi</span>
+                                <span x-show="calibSaving">Menyimpan...</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -324,6 +450,24 @@
                     flaskConnected: false,
                     flaskUrl: "{{ rtrim(config('app.flask_url', 'http://127.0.0.1:5000'), '/') }}",
 
+                    // --- Kalibrasi lantai ---
+                    calibInfo: null,
+                    calibOpen: false,
+                    calibLoading: false,
+                    calibSaving: false,
+                    calibImg: '',
+                    calibFrame: { w: 1, h: 1 },
+                    calibPoints: [],
+                    calibDrag: null,
+                    calibMargin: 0.25,
+                    calibDragIdx: [],
+                    calibDragLast: null,
+                    calibWidth: null,
+                    calibLength: null,
+                    calibMsg: '',
+                    calibMsgOk: false,
+                    calibError: '',
+
                     initDashboard() {
                         const user = localStorage.getItem('user_info');
                         if (user) {
@@ -331,6 +475,164 @@
                         }
                         this.fetchProducts();
                         this.startYoloStatsPolling();
+                        this.loadCalibration();
+                    },
+
+                    // ================= KALIBRASI LANTAI =================
+                    async loadCalibration() {
+                        try {
+                            const r = await fetch(`${this.flaskUrl}/api/calibration`, {
+                                headers: { 'ngrok-skip-browser-warning': 'true' }
+                            });
+                            const d = await r.json();
+                            this.calibInfo = d.calibration || null;
+                        } catch (e) {
+                            this.calibInfo = null;
+                        }
+                    },
+
+                    async openCalibration() {
+                        this.calibOpen = true;
+                        this.calibMsg = '';
+                        if (this.calibInfo) {
+                            this.calibWidth = this.calibInfo.width_cm;
+                            this.calibLength = this.calibInfo.length_cm;
+                        }
+                        await this.reloadSnapshot();
+                    },
+
+                    defaultQuad() {
+                        const w = this.calibFrame.w, h = this.calibFrame.h;
+                        return [
+                            [w * 0.30, h * 0.50], [w * 0.70, h * 0.50],
+                            [w * 0.85, h * 0.88], [w * 0.15, h * 0.88]
+                        ];
+                    },
+
+                    async reloadSnapshot() {
+                        this.calibLoading = true;
+                        this.calibError = '';
+                        try {
+                            const r = await fetch(`${this.flaskUrl}/api/snapshot?t=${Date.now()}`, {
+                                headers: { 'ngrok-skip-browser-warning': 'true' }
+                            });
+                            if (!r.ok) throw new Error('Stream CCTV belum aktif. Pastikan video tampil lalu coba lagi.');
+                            this.calibFrame = {
+                                w: parseInt(r.headers.get('X-Frame-Width')) || 1,
+                                h: parseInt(r.headers.get('X-Frame-Height')) || 1
+                            };
+                            const blob = await r.blob();
+                            if (this.calibImg) URL.revokeObjectURL(this.calibImg);
+                            this.calibImg = URL.createObjectURL(blob);
+                            if (this.calibInfo && this.calibInfo.points && this.calibInfo.frame_w) {
+                                const k = this.calibFrame.w / this.calibInfo.frame_w;
+                                this.calibPoints = this.calibInfo.points.map(p => [p[0] * k, p[1] * k]);
+                            } else {
+                                this.calibPoints = this.defaultQuad();
+                            }
+                        } catch (e) {
+                            this.calibImg = '';
+                            this.calibError = e.message || 'Gagal mengambil gambar dari CCTV.';
+                        } finally {
+                            this.calibLoading = false;
+                        }
+                    },
+
+                    stageX(x) {
+                        return (x + this.calibMargin * this.calibFrame.w) / (this.calibFrame.w * (1 + 2 * this.calibMargin)) * 100;
+                    },
+
+                    stageY(y) {
+                        return (y + this.calibMargin * this.calibFrame.h) / (this.calibFrame.h * (1 + 2 * this.calibMargin)) * 100;
+                    },
+
+                    pctX(i) {
+                        return this.calibPoints.length === 4 ? this.stageX(this.calibPoints[i][0]) : 0;
+                    },
+
+                    pctY(i) {
+                        return this.calibPoints.length === 4 ? this.stageY(this.calibPoints[i][1]) : 0;
+                    },
+
+                    calibXY(ev) {
+                        const rect = document.getElementById('calib-box').getBoundingClientRect();
+                        const m = this.calibMargin;
+                        return [
+                            (ev.clientX - rect.left) / rect.width * this.calibFrame.w * (1 + 2 * m) - m * this.calibFrame.w,
+                            (ev.clientY - rect.top) / rect.height * this.calibFrame.h * (1 + 2 * m) - m * this.calibFrame.h
+                        ];
+                    },
+
+                    startCalibDrag(ev, which) {
+                        this.calibDrag = which;
+                        if (which === 'all') {
+                            this.calibDragIdx = [0, 1, 2, 3];
+                        } else if (typeof which === 'string') {          // 'e0'..'e3' = satu sisi (2 titik)
+                            const k = parseInt(which.slice(1));
+                            this.calibDragIdx = [k, (k + 1) % 4];
+                        } else {                                          // angka = satu sudut
+                            this.calibDragIdx = [which];
+                        }
+                        this.calibDragLast = this.calibXY(ev);
+                    },
+
+                    onCalibDrag(ev) {
+                        if (this.calibDrag === null) return;
+                        const [x, y] = this.calibXY(ev);
+                        const m = this.calibMargin, W = this.calibFrame.w, H = this.calibFrame.h;
+                        const minX = -m * W, maxX = W + m * W, minY = -m * H, maxY = H + m * H;
+                        const idx = this.calibDragIdx;
+                        let dx = x - this.calibDragLast[0], dy = y - this.calibDragLast[1];
+                        const xs = idx.map(i => this.calibPoints[i][0]), ys = idx.map(i => this.calibPoints[i][1]);
+                        dx = Math.max(minX - Math.min(...xs), Math.min(maxX - Math.max(...xs), dx));
+                        dy = Math.max(minY - Math.min(...ys), Math.min(maxY - Math.max(...ys), dy));
+                        this.calibPoints = this.calibPoints.map((p, i) => idx.includes(i) ? [p[0] + dx, p[1] + dy] : p);
+                        this.calibDragLast = [this.calibDragLast[0] + dx, this.calibDragLast[1] + dy];
+                    },
+
+                    async saveCalibration() {
+                        this.calibSaving = true;
+                        this.calibMsg = '';
+                        try {
+                            const r = await fetch(`${this.flaskUrl}/api/calibration`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                                body: JSON.stringify({
+                                    points: this.calibPoints.map(p => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]),
+                                    width_cm: this.calibWidth,
+                                    length_cm: this.calibLength,
+                                    frame_w: this.calibFrame.w,
+                                    frame_h: this.calibFrame.h
+                                })
+                            });
+                            const d = await r.json();
+                            if (!r.ok || !d.success) throw new Error(d.message || 'Gagal menyimpan kalibrasi.');
+                            this.calibInfo = d.calibration;
+                            this.calibMsgOk = true;
+                            this.calibMsg = 'Kalibrasi tersimpan.';
+                            setTimeout(() => { this.calibOpen = false; }, 900);
+                        } catch (e) {
+                            this.calibMsgOk = false;
+                            this.calibMsg = e.message;
+                        } finally {
+                            this.calibSaving = false;
+                        }
+                    },
+
+                    async deleteCalibration() {
+                        if (!confirm('Hapus kalibrasi lantai?')) return;
+                        try {
+                            await fetch(`${this.flaskUrl}/api/calibration`, {
+                                method: 'DELETE', headers: { 'ngrok-skip-browser-warning': 'true' }
+                            });
+                            this.calibInfo = null;
+                            this.calibPoints = this.defaultQuad();
+                            this.calibMsgOk = true;
+                            this.calibMsg = 'Kalibrasi dihapus.';
+                        } catch (e) {
+                            this.calibMsgOk = false;
+                            this.calibMsg = 'Gagal menghapus kalibrasi.';
+                        }
                     },
 
                     async fetchProducts() {

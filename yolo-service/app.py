@@ -8,6 +8,7 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from ultralytics import YOLO
 from cap_from_youtube import cap_from_youtube
+import floor_calibration as fc
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -37,6 +38,11 @@ CM_PER_PIXEL = KNOWN_HEIGHT_CM / REFERENCE_PIXEL_HEIGHT
 # Titik tengah kalibrasi tinggi populasi (cm)
 HEIGHT_MIDPOINT_CM = 164.5
 
+# Batas tinggi yang dianggap wajar untuk dihitung ke rata-rata (di luar ini ditandai "tdk akurat")
+HEIGHT_VALID_MIN_CM = 120.0
+HEIGHT_VALID_MAX_CM = 210.0
+EDGE_MARGIN_PX = 3   # kotak yang menyentuh tepi gambar = badan terpotong, tinggi tidak bisa dipercaya
+
 DEFAULT_VIDEO_SOURCE = "tester-cctv1.mp4"
 YOUTUBE_RESOLUTION = 'best'
 
@@ -57,6 +63,7 @@ latest_frame_for_aux = None
 aux_tracking_boxes = []   # Hasil dari yolo_human_tracking.pt
 aux_height_boxes = []     # Hasil dari yolo_tinggi_badan.pt
 worker_running = False
+snapshot_store = {"frame": None}  # frame bersih terakhir, dipakai untuk kalibrasi lantai
 
 # Riwayat skor per track_id untuk Temporal Smoothing (anti-flicker)
 track_history = {}  # { track_id: {"scores": deque(maxlen=20), "heights": deque(maxlen=15), "last_seen": timestamp} }
@@ -143,6 +150,24 @@ def estimate_height(box_y1, box_y2, frame_height):
 
     estimated_height_cm = (pixel_height * CM_PER_PIXEL) / normalized_y
     return round(estimated_height_cm, 1)
+
+def estimate_height_calibrated(x1, y1, x2, y2, frame_w, frame_h, calib):
+    """Pakai kalibrasi lantai bila ada; jika tidak ada atau di luar jangkauan, pakai estimate_height lama."""
+    if calib is not None:
+        sx = calib["frame_w"] / float(frame_w)
+        sy = calib["frame_h"] / float(frame_h)
+        h = fc.height_from_box(calib, x1 * sx, y1 * sy, x2 * sx, y2 * sy)
+        if h is not None:
+            return h
+    return estimate_height(y1, y2, frame_h)
+
+def is_inside_calibrated_area(calib, x1, y1, x2, y2, frame_w, frame_h):
+    """True jika titik kaki (tengah-bawah kotak orang) berada di dalam garis kotak kalibrasi lantai."""
+    sx = calib["frame_w"] / float(frame_w)
+    sy = calib["frame_h"] / float(frame_h)
+    poly = np.array(calib["points"], dtype=np.float32)
+    foot = (float((x1 + x2) / 2.0) * sx, float(y2) * sy)
+    return cv2.pointPolygonTest(poly, foot, False) >= 0
 
 def get_effective_silhouette_width(roi_gray):
     """Mengukur lebar efektif objek di dalam potongan ROI menggunakan Canny Edge."""
@@ -262,6 +287,43 @@ def get_video_capture(source):
 def get_stats():
     return jsonify(current_stats), 200
 
+@app.route('/api/snapshot', methods=['GET', 'OPTIONS'])
+def snapshot():
+    if request.method == 'OPTIONS':   # preflight CORS harus selalu lolos, tidak bergantung ada/tidaknya frame
+        return ('', 204)
+    with shared_lock:
+        frame = None if snapshot_store["frame"] is None else snapshot_store["frame"].copy()
+    if frame is None:
+        return jsonify({"success": False, "message": "Stream belum aktif, belum ada frame."}), 503
+    _, buf = cv2.imencode('.jpg', frame)
+    resp = Response(buf.tobytes(), mimetype='image/jpeg')
+    resp.headers['Cache-Control'] = 'no-store'
+    resp.headers['X-Frame-Width'] = str(frame.shape[1])
+    resp.headers['X-Frame-Height'] = str(frame.shape[0])
+    resp.headers['Access-Control-Expose-Headers'] = 'X-Frame-Width, X-Frame-Height'
+    return resp
+
+@app.route('/api/calibration', methods=['GET', 'POST', 'DELETE', 'OPTIONS'])
+def calibration():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    source = request.args.get('source', DEFAULT_VIDEO_SOURCE)
+    if request.method == 'GET':
+        return jsonify({"success": True, "source": source, "calibration": fc.summary(fc.get(source))})
+    if request.method == 'DELETE':
+        return jsonify({"success": True, "deleted": fc.delete(source)})
+    data = request.get_json(silent=True) or {}
+    try:
+        calib = fc.save(
+            source, data['points'], float(data['width_cm']), float(data['length_cm']),
+            int(data['frame_w']), int(data['frame_h'])
+        )
+        return jsonify({"success": True, "source": source, "calibration": fc.summary(calib)})
+    except (KeyError, TypeError) as e:
+        return jsonify({"success": False, "message": f"Data tidak lengkap: {e}"}), 400
+    except ValueError as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+
 def process_video(video_source):
     global current_stats, latest_frame_for_aux, worker_running, track_history
 
@@ -299,11 +361,13 @@ def process_video(video_source):
 
         with shared_lock:
             latest_frame_for_aux = frame
+            snapshot_store["frame"] = frame.copy()
             curr_track_boxes = list(aux_tracking_boxes)
             curr_height_boxes = list(aux_height_boxes)
 
         frame_h, frame_w, _ = frame.shape
         now = time.time()
+        calib = fc.get(video_source)   # kalibrasi lantai CCTV ini (None = belum dikalibrasi)
 
         # 1. Deteksi + Object Tracking Real-Time (ByteTrack bawaan YOLOv8)
         final_detections = []
@@ -342,11 +406,18 @@ def process_video(video_source):
         male_count = 0
         female_count = 0
 
+        # Gambar area lantai terkalibrasi: hanya orang yang kakinya di dalam garis ini yang diukur tingginya
+        if calib is not None:
+            area_sx = frame_w / float(calib["frame_w"])
+            area_sy = frame_h / float(calib["frame_h"])
+            area_poly = np.array([[p[0] * area_sx, p[1] * area_sy] for p in calib["points"]], dtype=np.int32)
+            cv2.polylines(frame, [area_poly], True, (255, 200, 0), 2)
+
         for det in final_detections:
             x1, y1, x2, y2, conf, src, track_id = det
 
             # Hitung tinggi dasar
-            base_height_cm = estimate_height(y1, y2, frame_h)
+            base_height_cm = estimate_height_calibrated(x1, y1, x2, y2, frame_w, frame_h, calib)
             final_height_cm = base_height_cm
 
             # 3. Kontribusi yolo_tinggi_badan.pt (Residual Calibration)
@@ -360,7 +431,7 @@ def process_video(video_source):
                         matched_hbox = hb[:4]
 
             if best_iou >= 0.65 and matched_hbox is not None:
-                custom_height_cm = estimate_height(matched_hbox[1], matched_hbox[3], frame_h)
+                custom_height_cm = estimate_height_calibrated(matched_hbox[0], matched_hbox[1], matched_hbox[2], matched_hbox[3], frame_w, frame_h, calib)
                 delta = custom_height_cm - base_height_cm
                 clamped_delta = max(-3.0, min(3.0, delta * 0.25))
                 final_height_cm = round(base_height_cm + clamped_delta, 1)
@@ -387,7 +458,13 @@ def process_video(video_source):
                 smoothed_score = raw_score
                 id_tag = ""
 
-            heights_in_frame.append(final_height_cm)
+            # Tinggi hanya dihitung ke rata-rata jika kotak tidak menyentuh tepi gambar dan hasilnya masuk akal
+            touches_edge = (x1 <= EDGE_MARGIN_PX) or (y1 <= EDGE_MARGIN_PX) or \
+                           (x2 >= frame_w - EDGE_MARGIN_PX) or (y2 >= frame_h - EDGE_MARGIN_PX)
+            inside_area = True if calib is None else is_inside_calibrated_area(calib, x1, y1, x2, y2, frame_w, frame_h)
+            height_reliable = inside_area and (not touches_edge) and (HEIGHT_VALID_MIN_CM <= final_height_cm <= HEIGHT_VALID_MAX_CM)
+            if height_reliable:
+                heights_in_frame.append(final_height_cm)
 
             # Hitung tingkat keyakinan heuristik (55% - 95%)
             confidence_pct = int(min(95, max(55, 55 + abs(smoothed_score) * 10)))
@@ -403,7 +480,13 @@ def process_video(video_source):
                 box_color = (180, 105, 255)  # Pink/Magenta (BGR)
                 text_color = (0, 0, 0)
 
-            label = f"{id_tag}{gender} ({confidence_pct}%) | {final_height_cm} cm"
+            if height_reliable:
+                height_text = f"{final_height_cm} cm"
+            elif not inside_area:
+                height_text = "di luar area"
+            else:
+                height_text = "tdk akurat"
+            label = f"{id_tag}{gender} ({confidence_pct}%) | {height_text}"
             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
 
             (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 2)
