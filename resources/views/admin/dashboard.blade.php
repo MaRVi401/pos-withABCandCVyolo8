@@ -81,7 +81,7 @@
                     <span class="text-xl">📹</span>
                     <div>
                         <h3 class="font-bold text-sm text-cyan-400">Live CCTV Analytics & Visitor Counter (YOLOv8)</h3>
-                        <p class="text-xs text-slate-400">Deteksi, Estimasi Tinggi Badan & Analytics Real-time via Python
+                        <p class="text-xs text-slate-400">Deteksi, Estimasi Gender, Tinggi Badan & Analytics Real-time via Python
                             Flask</p>
                     </div>
                 </div>
@@ -115,6 +115,23 @@
                             <p class="text-[11px] text-cyan-200 mt-1">Orang Dalam Area CCTV</p>
                         </div>
 
+                        <!-- Card Gender Split: Laki-laki & Perempuan -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div
+                                class="p-4 bg-gradient-to-br from-sky-600 to-blue-800 rounded-xl shadow-lg border border-sky-400/30 text-center">
+                                <p class="text-[11px] font-extrabold uppercase tracking-wider text-sky-100">Laki-Laki</p>
+                                <h2 class="text-3xl font-extrabold text-white mt-1" x-text="maleCount">0</h2>
+                                <p class="text-[10px] text-sky-200 mt-0.5">Estimasi</p>
+                            </div>
+
+                            <div
+                                class="p-4 bg-gradient-to-br from-pink-600 to-rose-700 rounded-xl shadow-lg border border-pink-400/30 text-center">
+                                <p class="text-[11px] font-extrabold uppercase tracking-wider text-pink-100">Perempuan</p>
+                                <h2 class="text-3xl font-extrabold text-white mt-1" x-text="femaleCount">0</h2>
+                                <p class="text-[10px] text-pink-200 mt-0.5">Estimasi</p>
+                            </div>
+                        </div>
+
                         <!-- Card 2: Rata-Rata Tinggi Badan -->
                         <div
                             class="p-5 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl shadow-lg border border-purple-500/30 text-center">
@@ -132,11 +149,12 @@
                             class="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-300">
                             <div class="flex justify-between items-center pb-2 border-b border-slate-800">
                                 <span class="text-slate-400">Status Flask:</span>
-                                <span class="font-bold text-emerald-400">Connected (Port 5000)</span>
+                                <span class="font-bold" :class="flaskConnected ? 'text-emerald-400' : 'text-red-400'"
+                                    x-text="flaskConnected ? 'Connected (Port 5000)' : 'Disconnected'">Connected (Port 5000)</span>
                             </div>
                             <div class="flex justify-between items-center pb-2 border-b border-slate-800">
                                 <span class="text-slate-400">Model AI:</span>
-                                <span class="font-semibold text-slate-200">YOLOv8 Nano (pt)</span>
+                                <span class="font-semibold text-slate-200">YOLOv8 Ensemble (pt)</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-slate-400">Target Class:</span>
@@ -300,6 +318,8 @@
                     abcModalOpen: false,
                     abcResult: null,
                     visitorCount: 0,
+                    maleCount: 0,
+                    femaleCount: 0,
                     avgHeight: 0.0,
                     flaskConnected: false,
                     flaskUrl: "{{ rtrim(config('app.flask_url', 'http://127.0.0.1:5000'), '/') }}",
@@ -375,6 +395,8 @@
                                 if (response.ok) {
                                     const data = await response.json();
                                     this.visitorCount = data.detected_count ?? data.total_detected ?? 0;
+                                    this.maleCount = data.male_count ?? 0;
+                                    this.femaleCount = data.female_count ?? 0;
                                     this.avgHeight = data.avg_height_cm ?? 0.0;
                                     this.flaskConnected = true;
                                 } else {
