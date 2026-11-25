@@ -64,6 +64,7 @@ aux_tracking_boxes = []   # Hasil dari yolo_human_tracking.pt
 aux_height_boxes = []     # Hasil dari yolo_tinggi_badan.pt
 worker_running = False
 snapshot_store = {"frame": None}  # frame bersih terakhir, dipakai untuk kalibrasi lantai
+overlay_settings = {"show_calibration_line": True}  # tampilkan/sembunyikan garis kalibrasi di video (kalibrasi tetap aktif)
 
 # Riwayat skor per track_id untuk Temporal Smoothing (anti-flicker)
 track_history = {}  # { track_id: {"scores": deque(maxlen=20), "heights": deque(maxlen=15), "last_seen": timestamp} }
@@ -324,6 +325,15 @@ def calibration():
     except ValueError as e:
         return jsonify({"success": False, "message": str(e)}), 400
 
+@app.route('/api/calibration/overlay', methods=['GET', 'POST', 'OPTIONS'])
+def calibration_overlay():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        overlay_settings["show_calibration_line"] = bool(data.get("show", True))
+    return jsonify({"success": True, "show": overlay_settings["show_calibration_line"]})
+
 def process_video(video_source):
     global current_stats, latest_frame_for_aux, worker_running, track_history
 
@@ -407,11 +417,11 @@ def process_video(video_source):
         female_count = 0
 
         # Gambar area lantai terkalibrasi: hanya orang yang kakinya di dalam garis ini yang diukur tingginya
-        if calib is not None:
+        if calib is not None and overlay_settings["show_calibration_line"]:
             area_sx = frame_w / float(calib["frame_w"])
             area_sy = frame_h / float(calib["frame_h"])
             area_poly = np.array([[p[0] * area_sx, p[1] * area_sy] for p in calib["points"]], dtype=np.int32)
-            cv2.polylines(frame, [area_poly], True, (255, 200, 0), 2)
+            cv2.polylines(frame, [area_poly], True, (0, 255, 255), 2)   # kuning (BGR)
 
         for det in final_detections:
             x1, y1, x2, y2, conf, src, track_id = det
