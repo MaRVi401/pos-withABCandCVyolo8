@@ -108,6 +108,10 @@
                                 class="px-4 py-2 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white">
                                 📐 Kalibrasi Lantai
                             </button>
+                            <button type="button" x-show="calibInfo" @click="toggleCalibLine()"
+                                class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700">
+                                <span x-text="calibLineVisible ? '🙈 Sembunyikan Garis' : '👁 Tampilkan Garis'"></span>
+                            </button>
                             <span x-show="calibInfo" class="text-[11px] font-semibold text-emerald-400">
                                 ✔ Terkalibrasi: <span x-text="calibInfo ? `${calibInfo.width_cm} × ${calibInfo.length_cm} cm` : ''"></span>
                             </span>
@@ -460,6 +464,7 @@
                     calibPoints: [],
                     calibDrag: null,
                     calibMargin: 0.25,
+                    calibLineVisible: true,
                     calibDragIdx: [],
                     calibDragLast: null,
                     calibWidth: null,
@@ -486,9 +491,31 @@
                             });
                             const d = await r.json();
                             this.calibInfo = d.calibration || null;
+                            // samakan tampilan garis di video dengan pilihan terakhir pengguna
+                            const saved = localStorage.getItem('calib_line_visible');
+                            if (saved !== null) this.setCalibLine(saved === '1');
                         } catch (e) {
                             this.calibInfo = null;
                         }
+                    },
+
+                    async setCalibLine(show) {
+                        try {
+                            const r = await fetch(`${this.flaskUrl}/api/calibration/overlay`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                                body: JSON.stringify({ show })
+                            });
+                            const d = await r.json();
+                            this.calibLineVisible = !!d.show;
+                            localStorage.setItem('calib_line_visible', d.show ? '1' : '0');
+                        } catch (e) {
+                            console.error('Gagal mengubah tampilan garis kalibrasi:', e);
+                        }
+                    },
+
+                    toggleCalibLine() {
+                        return this.setCalibLine(!this.calibLineVisible);
                     },
 
                     async openCalibration() {
