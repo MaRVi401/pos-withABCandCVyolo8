@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\StockAdjustmentController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\ChatbotController;
+use App\Http\Controllers\Api\V1\ProductCorrelationController;
 
 Route::prefix('v1')->group(function () {
     // 1. Guest Routes
@@ -35,6 +36,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store']);
 
             // Optimasi ABC & Chatbot AI
+            Route::get('/correlations', [ProductCorrelationController::class, 'index']);
             Route::get('/abc/generate-bundle', [ABCController::class, 'generateBundle']);
             Route::post('/chatbot/chat', [ChatbotController::class, 'chat']);
 

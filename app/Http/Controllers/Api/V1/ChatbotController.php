@@ -14,12 +14,13 @@ class ChatbotController extends Controller
     public function chat(Request $request)
     {
         $request->validate([
-            'message' => 'required|string',
+            'message' => 'required|string|max:1000',
             'history' => 'nullable|array',
         ]);
 
-        $apiKey = env('GROQ_API_KEY');
-        $model = env('GROQ_DEFAULT_MODEL', 'llama-3.3-70b-versatile');
+        // Ambil dari config/services.php (aman setelah php artisan config:cache)
+        $apiKey = config('services.groq.key');
+        $model  = config('services.groq.model');
 
         if (!$apiKey) {
             return response()->json([
@@ -36,15 +37,17 @@ class ChatbotController extends Controller
             ]
         ];
 
-        // 2. Masukkan Riwayat Chat jika Ada
-        if ($request->has('history') && is_array($request->history)) {
-            foreach ($request->history as $chat) {
-                if (isset($chat['role']) && isset($chat['content'])) {
-                    $messages[] = [
-                        'role' => $chat['role'],
-                        'content' => $chat['content'],
-                    ];
-                }
+        // 2. Masukkan Riwayat Chat (hanya role user/assistant, maksimal 10 pesan terakhir)
+        foreach (array_slice($request->input('history', []), -10) as $chat) {
+            if (
+                is_array($chat)
+                && in_array($chat['role'] ?? null, ['user', 'assistant'], true)
+                && !empty($chat['content'])
+            ) {
+                $messages[] = [
+                    'role' => $chat['role'],
+                    'content' => (string) $chat['content'],
+                ];
             }
         }
 
@@ -110,16 +113,20 @@ class ChatbotController extends Controller
             }
 
             $responseData = $response->json();
-            $choiceMessage = $responseData['choices'][0]['message'];
+            $choiceMessage = $responseData['choices'][0]['message'] ?? null;
+
+            if (!$choiceMessage) {
+                return response()->json(['status' => 'error', 'message' => 'Respons AI tidak valid.'], 500);
+            }
 
             // 5. Jika AI Meminta Pemanggilan Tool (Function Calling)
-            if (isset($choiceMessage['tool_calls'])) {
+            if (!empty($choiceMessage['tool_calls'])) {
                 $messages[] = $choiceMessage; // Masukkan instruksi tool dari AI ke riwayat
 
                 foreach ($choiceMessage['tool_calls'] as $toolCall) {
-                    $functionName = $toolCall['function']['name'];
-                    $arguments = json_decode($toolCall['function']['arguments'], true);
-                    $result = null;
+                    $functionName = $toolCall['function']['name'] ?? '';
+                    $arguments = json_decode($toolCall['function']['arguments'] ?? '{}', true) ?? [];
+                    $result = ['message' => 'Fungsi tidak dikenali.'];
 
                     if ($functionName === 'get_sales_summary') {
                         $result = $this->getSalesSummaryFromDb($arguments['period'] ?? 'today');
@@ -131,7 +138,7 @@ class ChatbotController extends Controller
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $toolCall['id'],
-                        'content' => json_encode($result)
+                        'content' => json_encode($result),
                     ];
                 }
 
@@ -143,6 +150,11 @@ class ChatbotController extends Controller
                     'model' => $model,
                     'messages' => $messages,
                 ]);
+
+                if (!$finalResponse->successful()) {
+                    Log::error('Groq API Error (final): ' . $finalResponse->body());
+                    return response()->json(['status' => 'error', 'message' => 'Gagal menyusun jawaban AI.'], 500);
+                }
 
                 $reply = $finalResponse->json()['choices'][0]['message']['content'] ?? 'Data berhasil diproses.';
             } else {
@@ -165,6 +177,9 @@ class ChatbotController extends Controller
     private function getSalesSummaryFromDb($period)
     {
         $query = Transaction::query();
+
+        // OPSIONAL: filter status transaksi (sesuaikan nama kolom & nilainya dengan tabel Anda)
+        // $query->where('status', 'completed');
 
         if ($period === 'today') {
             $query->whereDate('transaction_date', now()->today());

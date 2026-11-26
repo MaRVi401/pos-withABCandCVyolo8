@@ -21,6 +21,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 
     <!-- Custom Style untuk Merapikan Output Markdown & Tabel Chatbot -->
     <style>
@@ -247,7 +248,7 @@
                                 : 'bg-white text-gray-800 p-3 rounded-xl max-w-[90%] leading-relaxed shadow-sm border border-gray-100'">
                                 
                                 <!-- Render HTML via Marked.js dengan Styling CSS Custom -->
-                                <div class="chat-content overflow-x-auto" x-html="marked.parse(msg.content || '')"></div>
+                                <div class="chat-content overflow-x-auto" x-html="DOMPurify.sanitize(marked.parse(msg.content || ''))"></div>
                             </div>
                         </div>
                     </template>
